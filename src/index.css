@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 224 71% 4%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 4%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 4%;
+
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 9% 25%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 220 14% 96%;
+    --accent-foreground: 220 9% 25%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%;
+
+    --radius: 0.6rem;
+
+    --income: 142 71% 45%;
+    --expense: 0 84% 60%;
+    --balance: 221 83% 53%;
+  }
+
+  .dark {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 9%;
+    --popover-foreground: 210 40% 98%;
+    /* 暗色下 primary 调柔（不刺眼） */
+    --primary: 217 76% 55%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 14%;
+    --muted-foreground: 215 20% 70%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 40%;
+    --destructive-foreground: 210 40% 98%;
+    /* 暗色下 border 调亮一档（让卡片边界清晰） */
+    --border: 217 28% 22%;
+    --input: 217 28% 22%;
+    --ring: 217 76% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  html,
+  body,
+  #root {
+    @apply h-full;
+  }
+}
+
+/* 打印样式：账户余额月度报表 */
+@page {
+  size: A4 landscape;
+  margin: 8mm;
+}
+
+@media print {
+  /* 1. 隐藏所有非打印内容（不依赖具体 DOM 结构） */
+  body * {
+    visibility: hidden !important;
+  }
+  /* 2. 但 Dialog 容器、.print-area 及其所有子元素重新可见 */
+  [role='dialog'],
+  [role='dialog'] *,
+  .print-area,
+  .print-area * {
+    visibility: visible !important;
+  }
+  /* 3. 弹窗自身：变成静态块级元素、占满页面 */
+  [role='dialog'] {
+    position: static !important;
+    background: white !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+  /* 4. 弹窗里的 header / footer 隐藏（保留 .print-area） */
+  [role='dialog'] [data-dialog-header],
+  [role='dialog'] [data-dialog-footer],
+  [role='dialog'] [data-dialog-body] {
+    display: none !important;
+  }
+  /* 5. .print-area 单独显示并填满页面 */
+  .print-area {
+    display: block !important;
+    position: static !important;
+    background: white !important;
+    color: #0f172a !important;
+    padding: 12px !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    font-size: 10pt;
+  }
+  .print-area * {
+    color: #0f172a !important;
+  }
+  /* 6. 表格：避免分页 */
+  .print-area table {
+    page-break-inside: avoid;
+    border-collapse: collapse;
+    width: 100%;
+  }
+  /* 7. 表头黑底白字保留 */
+  .print-area thead {
+    background: #0f172a !important;
+  }
+  .print-area th {
+    background: #0f172a !important;
+    color: white !important;
+    padding: 8px 12px !important;
+  }
+  .print-area td {
+    padding: 6px 12px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+}
+
+/* Recharts 文字颜色适配 */
+.recharts-cartesian-axis-tick-value {
+  fill: hsl(var(--muted-foreground));
+  font-size: 12px;
+}
+.recharts-legend-item-text {
+  color: hsl(var(--muted-foreground)) !important;
+  font-size: 12px;
+}
+.recharts-tooltip-wrapper {
+  outline: none;
+}
