@@ -27,10 +27,23 @@ app.get('/api/categories', (req, res) => {
 })
 
 // ============ 记录 ============
+// GET /api/records            → 全量（倒序）
+// GET /api/records?month=YYYY-MM → 只返回该月记录（增量加载用）
+// GET /api/records?limit=N    → 只返回最近 N 条
 app.get('/api/records', (req, res) => {
-  const rows = getDb()
-    .prepare('SELECT id, type, amount, category, date, note, created_at as createdAt FROM records ORDER BY date DESC, created_at DESC')
-    .all()
+  const { month, limit } = req.query || {}
+  let sql = 'SELECT id, type, amount, category, date, note, created_at as createdAt FROM records'
+  const where = []
+  const params = []
+  if (month && /^\d{4}-\d{2}$/.test(String(month))) {
+    where.push("date LIKE ?")
+    params.push(`${month}-%`)
+  }
+  if (where.length > 0) sql += ' WHERE ' + where.join(' AND ')
+  sql += ' ORDER BY date DESC, created_at DESC'
+  const n = Number(limit)
+  if (Number.isInteger(n) && n > 0) sql += ` LIMIT ${n}`
+  const rows = getDb().prepare(sql).all(...params)
   // 金额从分转回元
   const result = rows.map((r) => ({ ...r, amount: r.amount / 100 }))
   res.json(result)
@@ -422,7 +435,7 @@ app.post('/api/balances/batch', (req, res) => {
   )
 
   const tx = db.transaction((list) => {
-    const created = []
+    const createdIds = []
     list.forEach((it, i) => {
       const acc = accStmt.get(it.accountId)
       if (!acc) throw new Error(`item[${i}].account not found: ${it.accountId}`)
@@ -440,14 +453,19 @@ app.post('/api/balances/batch', (req, res) => {
         it.note ?? null,
         Date.now(),
       )
-      created.push({ id, ...it })
+      createdIds.push(id)
     })
-    return created
+    return createdIds
   })
 
   try {
-    const created = tx(items)
-    res.status(201).json({ ok: true, count: created.length, items: created })
+    const createdIds = tx(items)
+    // 返回完整行（前端做增量合并，避免全量重拉）
+    const placeholders = createdIds.map(() => '?').join(',')
+    const rows = createdIds.length > 0
+      ? db.prepare(`SELECT ${BALANCE_COLS} FROM balance_snapshots WHERE id IN (${placeholders})`).all(...createdIds)
+      : []
+    res.status(201).json({ ok: true, count: rows.length, items: rows.map((r) => ({ ...r, amount: r.amount / 100 })) })
   } catch (err) {
     res.status(400).json({ error: String(err.message || err) })
   }

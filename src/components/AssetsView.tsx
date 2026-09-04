@@ -13,6 +13,7 @@ import {
 import { cn, formatMoney } from '@/lib/utils'
 import type { Account, AccountKind, BalanceSnapshot, SubAccount } from '@/types'
 import { allMonthsFromRecords, fillDateForMonth } from '@/utils/assets'
+import { useAppData } from '@/context/DataContext'
 import AssetOverview from './AssetOverview'
 import AssetTable from './AssetTable'
 import BalanceForm from './BalanceForm'
@@ -22,71 +23,28 @@ import BalanceReport from './BalanceReport'
 import HistoryEditDialog from './HistoryEditDialog'
 import BatchEntryDialog from './BatchEntryDialog'
 
-interface Props {
-  accounts: Account[]
-  subAccounts: SubAccount[]
-  balances: BalanceSnapshot[]
-  loading: boolean
-  error: string | null
-  onAddAccount: (data: {
-    name: string
-    kind: AccountKind
-    icon: string
-    color: string
-    note?: string
-  }) => Promise<Account> | Account
-  onUpdateAccount: (id: string, patch: Partial<Account>) => void
-  onDeleteAccount: (id: string) => void
-  onAddSubAccount: (data: {
-    accountId: string
-    name: string
-    icon: string
-    color: string
-    note?: string
-  }) => void
-  onUpdateSubAccount: (id: string, patch: Partial<SubAccount>) => void
-  onDeleteSubAccount: (id: string) => void
-  onReorderAccounts: (orderedIds: string[]) => void
-  onAddBalance: (data: {
-    accountId: string
-    subAccountId?: string
-    amount: number
-    date: string
-    note?: string
-  }) => void
-  onDeleteBalance: (id: string) => void
-  onUpdateBalance: (id: string, data: { amount: number; date: string; note?: string }) => Promise<void> | void
-  onBatchDeleteBalances: (ids: string[]) => void
-  onBatchDeleteByDate: (dates: string[]) => Promise<void> | void
-  onBatchAddBalances: (items: Array<{
-    accountId: string
-    subAccountId?: string
-    amount: number
-    date: string
-    note?: string
-  }>) => Promise<void>
-}
-
-export default function AssetsView({
-  accounts,
-  subAccounts,
-  balances,
-  loading,
-  error,
-  onAddAccount,
-  onUpdateAccount,
-  onDeleteAccount,
-  onAddSubAccount,
-  onUpdateSubAccount,
-  onDeleteSubAccount,
-  onReorderAccounts,
-  onAddBalance,
-  onDeleteBalance,
-  onUpdateBalance,
-  onBatchDeleteBalances,
-  onBatchDeleteByDate,
-  onBatchAddBalances,
-}: Props) {
+export default function AssetsView() {
+  // 直接订阅全局数据上下文（重命名为 on* 风格，保持下方代码不变）
+  const {
+    accounts,
+    subAccounts,
+    balances,
+    assetsLoading: loading,
+    assetsError: error,
+    addAccount: onAddAccount,
+    updateAccount: onUpdateAccount,
+    deleteAccount: onDeleteAccount,
+    addSubAccount: onAddSubAccount,
+    updateSubAccount: onUpdateSubAccount,
+    deleteSubAccount: onDeleteSubAccount,
+    reorderAccounts: onReorderAccounts,
+    addBalance: onAddBalance,
+    deleteBalance: onDeleteBalance,
+    updateBalance: onUpdateBalance,
+    batchDeleteBalances: onBatchDeleteBalances,
+    batchDeleteByDate: onBatchDeleteByDate,
+    batchAddBalances: onBatchAddBalances,
+  } = useAppData()
   // 记余额
   const [balanceOpen, setBalanceOpen] = useState(false)
   const [balanceAccount, setBalanceAccount] = useState<Account | null>(null)

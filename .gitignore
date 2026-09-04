@@ -36,3 +36,6 @@ Thumbs.db
 finance-app-token.txt
 *.tmp
 *.bak
+
+# agent memory (personal work logs)
+.workbuddy/

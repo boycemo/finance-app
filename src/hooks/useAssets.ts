@@ -107,10 +107,13 @@ export function useAssets() {
   const batchAddBalances = useCallback(
     async (items: Omit<BalanceSnapshot, 'id' | 'createdAt'>[]) => {
       if (items.length === 0) return
-      await api.batchAddBalances(items)
-      await loadAll()
+      // 增量合并：服务端返回完整行，直接并进 state，避免全量重拉
+      const { items: created } = await api.batchAddBalances(items)
+      if (created && created.length > 0) {
+        setState((s) => ({ ...s, balances: [...created, ...s.balances] }))
+      }
     },
-    [loadAll],
+    [],
   )
 
   const updateBalance = useCallback(async (id: string, patch: Partial<BalanceSnapshot>) => {

@@ -36,7 +36,14 @@ export const api = {
   health: () => request<{ ok: boolean; records: number; accounts: number; time: string }>('/api/health'),
   // 记录
   getCategories: () => request<Category[]>('/api/categories'),
-  getRecords: () => request<FinanceRecord[]>('/api/records'),
+  // month: 只取该月记录；limit: 只取最近 N 条（不传 = 全量）
+  getRecords: (opts?: { month?: string; limit?: number }) => {
+    const q = new URLSearchParams()
+    if (opts?.month) q.set('month', opts.month)
+    if (opts?.limit) q.set('limit', String(opts.limit))
+    const qs = q.toString()
+    return request<FinanceRecord[]>(`/api/records${qs ? `?${qs}` : ''}`)
+  },
   addRecord: (r: Omit<FinanceRecord, 'id' | 'createdAt'>) =>
     request<FinanceRecord>('/api/records', { method: 'POST', body: JSON.stringify(r) }),
   updateRecord: (id: string, patch: Partial<FinanceRecord>) =>
@@ -74,7 +81,7 @@ export const api = {
   addBalance: (b: Omit<BalanceSnapshot, 'id' | 'createdAt'>) =>
     request<BalanceSnapshot>('/api/balances', { method: 'POST', body: JSON.stringify(b) }),
   batchAddBalances: (items: Omit<BalanceSnapshot, 'id' | 'createdAt'>[]) =>
-    request<{ ok: boolean; count: number }>('/api/balances/batch', {
+    request<{ ok: boolean; count: number; items: BalanceSnapshot[] }>('/api/balances/batch', {
       method: 'POST',
       body: JSON.stringify({ items }),
     }),
