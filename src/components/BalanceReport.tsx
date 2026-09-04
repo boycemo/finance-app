@@ -226,7 +226,8 @@ export default function BalanceReport({ accounts, balances, subAccounts }: Props
             </CardTitle>
             <CardDescription>每次余额录入都是一个数据点（当日各账户记录值，与月度报表口径一致）</CardDescription>
           </div>
-          <Popover>
+          <div className="flex items-center gap-2">
+            <Popover>
             <PopoverTrigger asChild>
               <button
                 className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
@@ -281,9 +282,10 @@ export default function BalanceReport({ accounts, balances, subAccounts }: Props
               </p>
             </PopoverContent>
           </Popover>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] w-full">
+          <div data-chart-container className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -345,7 +347,7 @@ export default function BalanceReport({ accounts, balances, subAccounts }: Props
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="max-h-[420px] overflow-auto">
+          <div data-table-container className="max-h-[420px] overflow-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0 z-10 bg-card shadow-sm">
                 <tr className="border-b border-border">

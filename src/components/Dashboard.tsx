@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import {
   AlertTriangle,
   Calendar,
   Database,
   Download,
-  Eye,
+  FileText,
   Landmark,
   Loader2,
   Moon,
@@ -14,17 +14,9 @@ import {
   Trash2,
   Upload,
   Wallet,
-  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
 import {
   Popover,
   PopoverContent,
@@ -35,25 +27,7 @@ import type { Account, AccountKind, BalanceSnapshot, Category, FinanceRecord, Su
 import { accountMonthlyBalance } from '@/utils/assets'
 
 // 弹窗预览用：单月报表的所有展示数据
-interface ReportPreviewData {
-  currentTotal: number
-  prevTotal: number
-  diff: number
-  diffPctText: string
-  curMonthNum: number
-  prevMonthNum: number
-  rows: Array<{
-    accountId: string
-    name: string
-    icon: string
-    kindLabel: string
-    amount: number
-    prevAmount: number
-    change: number
-  }>
-}
 import { filterByMonth, lastNMonthsTrend, summarizeMonth } from '@/utils/date'
-import { api } from '@/utils/api'
 import { useTheme } from '@/hooks/useTheme'
 import StatCards from './StatCards'
 import { KIND_LABELS } from './AssetOverview'
@@ -158,10 +132,6 @@ export default function Dashboard({
   const [monthPickerOpen, setMonthPickerOpen] = useState(false)
   const [editing, setEditing] = useState<FinanceRecord | null>(null)
   const [filterCategory, setFilterCategory] = useState<string | null>(null)
-  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false)
-  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null)
-  // 弹窗内 HTML 预览数据（避免 PDF viewer 渲染问题）
-  const [reportPreview, setReportPreview] = useState<ReportPreviewData | null>(null)
   const [theme, toggleTheme] = useTheme()
   const [clearOpen, setClearOpen] = useState(false)
 
@@ -193,24 +163,32 @@ export default function Dashboard({
     return opts
   }, [])
 
-  const handleExportPDF = async () => {
-    // 打开预览弹窗
-    setPdfPreviewOpen(true)
-    setPdfPreviewUrl(null)
-    setReportPreview(null)
-    try {
-      // 1) fetch PDF → blob URL（用于"下载"按钮）
-      const url = `${api.base}/api/pdf/monthly?month=${encodeURIComponent(month)}&t=${Date.now()}`
-      const res = await fetch(url)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const blob = await res.blob()
-      const blobUrl = URL.createObjectURL(blob)
-      setPdfPreviewUrl(blobUrl)
+  const handlePrintFull = () => {
+    document.body.removeAttribute('data-print-mode')
+    // 给浏览器一点时间应用样式
+    requestAnimationFrame(() => window.print())
+  }
 
-      // 2) 用前端逻辑算预览数据（绕过 PDF viewer 的渲染问题）
-      const prevMonth = dayjs(`${month}-01`).subtract(1, 'month').format('YYYY-MM')
-      const activeAccounts = accounts.filter((a) => !a.archived)
-      const rows = activeAccounts.map((acc) => {
+  const handlePrintMonth = () => {
+    document.body.setAttribute('data-print-mode', 'month')
+    requestAnimationFrame(() => window.print())
+  }
+
+  // 打印完成后清除 data-print-mode（保证下次正常显示）
+  useEffect(() => {
+    const handleAfterPrint = () => {
+      document.body.removeAttribute('data-print-mode')
+    }
+    window.addEventListener('afterprint', handleAfterPrint)
+    return () => window.removeEventListener('afterprint', handleAfterPrint)
+  }, [])
+
+  // ===== 月度明细打印数据 =====
+  const monthDetail = useMemo(() => {
+    const prevMonth = dayjs(`${month}-01`).subtract(1, 'month').format('YYYY-MM')
+    const activeAccounts = accounts.filter((a) => !a.archived)
+    const rows = activeAccounts
+      .map((acc) => {
         const amount = accountMonthlyBalance(acc, balances, subAccounts, month)
         const prevAmount = accountMonthlyBalance(acc, balances, subAccounts, prevMonth)
         return {
@@ -223,61 +201,24 @@ export default function Dashboard({
           change: amount - prevAmount,
         }
       })
-      const prevTotal = activeAccounts.reduce(
-        (s, acc) => s + accountMonthlyBalance(acc, balances, subAccounts, prevMonth),
-        0,
-      )
-      const currentTotal = rows.reduce((s, r) => s + r.amount, 0)
-      const diff = currentTotal - prevTotal
-      const diffPct = prevTotal === 0 ? null : (diff / Math.abs(prevTotal)) * 100
-      const diffPctText =
-        diffPct === null
-          ? '— 较上月'
-          : (diff > 0 ? '↑ +' : diff < 0 ? '↓ ' : '') + diffPct.toFixed(1) + '% 较上月'
-      setReportPreview({
-        currentTotal,
-        prevTotal,
-        diff,
-        diffPctText,
-        curMonthNum: parseInt(month.split('-')[1], 10),
-        prevMonthNum: parseInt(prevMonth.split('-')[1], 10),
-        rows,
-      })
-    } catch (err) {
-      alert(`预览失败：${String(err)}`)
-      setPdfPreviewOpen(false)
+      .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
+    const prevTotal = activeAccounts.reduce(
+      (s, acc) => s + accountMonthlyBalance(acc, balances, subAccounts, prevMonth),
+      0,
+    )
+    const currentTotal = rows.reduce((s, r) => s + r.amount, 0)
+    const diff = currentTotal - prevTotal
+    const diffPct = prevTotal === 0 ? null : (diff / Math.abs(prevTotal)) * 100
+    return {
+      curMonthLabel: dayjs(`${month}-01`).format('YYYY年MM月'),
+      prevMonthLabel: dayjs(`${prevMonth}-01`).format('YYYY年MM月'),
+      currentTotal,
+      prevTotal,
+      diff,
+      diffPct,
+      rows,
     }
-  }
-
-  const closePdfPreview = () => {
-    setPdfPreviewOpen(false)
-    if (pdfPreviewUrl && pdfPreviewUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(pdfPreviewUrl)
-    }
-    setPdfPreviewUrl(null)
-  }
-
-  // "下载 PDF"按钮：直接打开后端 PDF 端点
-  // 浏览器会弹"下载文件"提示，保存即可
-  // PDF 内容排版 = 后端 pdfkit 生成（4 列与 HTML 预览一致）
-  const downloadPdfFile = () => {
-    const url = `${api.base}/api/pdf/monthly?month=${encodeURIComponent(month)}&t=${Date.now()}`
-    // 直接触发下载（不开新窗口，避免 PDF viewer 渲染）
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `monthly-report-${month}.pdf`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    // 下载后自动关弹窗
-    setTimeout(() => {
-      setPdfPreviewOpen(false)
-    }, 800)
-  }
-
-  const cancelPreview = () => {
-    setPdfPreviewOpen(false)
-  }
+  }, [accounts, balances, subAccounts, month])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/40">
@@ -343,11 +284,22 @@ export default function Dashboard({
               </PopoverContent>
             </Popover>
 
+            {/* 月度明细 PDF（按当前选中月份） */}
             <Button
               variant="outline"
               size="icon"
-              onClick={handleExportPDF}
-              title={`导出 ${dayjs(month).format('YYYY年MM月')} 账户余额月度报表 PDF`}
+              onClick={handlePrintMonth}
+              title={`打印 ${dayjs(month).format('YYYY年MM月')} 账户余额明细`}
+            >
+              <FileText className="h-4 w-4" />
+            </Button>
+
+            {/* 整页 PDF（账户余额全览 / 收支记账全页） */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handlePrintFull}
+              title="导出当前页面为 PDF"
             >
               <Download className="h-4 w-4" />
             </Button>
@@ -403,7 +355,7 @@ export default function Dashboard({
         </div>
       </div>
 
-      <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+      <main id="dashboard-print-area" className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
         {/* 错误条 */}
         {error && (
           <div className="flex items-start gap-3 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
@@ -598,197 +550,173 @@ export default function Dashboard({
           onClose={() => setClearOpen(false)}
           onConfirm={onClearAll}
         />
-
-        {/* 账户余额月度报表预览弹窗（HTML 渲染，不用 PDF viewer） */}
-        <Dialog
-          open={pdfPreviewOpen}
-          onOpenChange={(v) => {
-            if (!v) closePdfPreview()
-          }}
-        >
-          <DialogContent className="flex h-[90vh] max-w-4xl flex-col gap-0 p-0 sm:rounded-lg [&>button]:hidden">
-            <DialogHeader data-dialog-header className="flex flex-row items-center justify-between gap-2 border-b border-border px-4 py-3">
-              <div>
-                <DialogTitle className="flex items-center gap-2 text-base">
-                  <Eye className="h-4 w-4" />
-                  账户余额月度报表 · {dayjs(month).format('YYYY年MM月')}
-                </DialogTitle>
-                <DialogDescription className="text-xs">
-                  预览效果如下，确认无误后点右下角"下载 PDF"保存
-                </DialogDescription>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={cancelPreview}
-                className="h-8 w-8"
-                title="取消"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogHeader>
-            <div data-dialog-body className="flex-1 overflow-auto bg-muted/30 p-6">
-              {reportPreview ? (
-                <div className="print-area mx-auto max-w-2xl rounded-lg bg-card p-6 shadow-sm">
-                  {/* 标题 */}
-                  <h1 className="text-center text-xl font-bold text-foreground">
-                    个人记账 · 账户余额月度报表
-                  </h1>
-                  <p className="mt-1 text-center text-lg text-muted-foreground">
-                    {dayjs(month).format('YYYY年MM月')}
-                  </p>
-                  <p className="mt-1 text-center text-xs text-muted-foreground/70">
-                    生成时间：{dayjs().format('YYYY-MM-DD HH:mm')}
-                  </p>
-
-                  {/* 汇总卡（2 张） */}
-                  <div className="mt-6 grid grid-cols-2 gap-3">
-                    <div className="rounded-lg border border-border bg-muted/30 p-4 text-center">
-                      <p className="text-xs text-muted-foreground">本月总余额</p>
-                      <p
-                        className={cn(
-                          'mt-1 text-2xl font-bold tabular-nums',
-                          reportPreview.currentTotal >= 0 ? 'text-emerald-600' : 'text-rose-600',
-                        )}
-                      >
-                        ¥ {formatMoney(reportPreview.currentTotal)}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        上月 {reportPreview.prevMonthNum}月 · ¥{' '}
-                        {formatMoney(reportPreview.prevTotal)}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-border bg-muted/30 p-4 text-center">
-                      <p className="text-xs text-muted-foreground">环比变化</p>
-                      <p
-                        className={cn(
-                          'mt-1 text-2xl font-bold tabular-nums',
-                          reportPreview.diff > 0
-                            ? 'text-emerald-600'
-                            : reportPreview.diff < 0
-                              ? 'text-rose-600'
-                              : 'text-muted-foreground',
-                        )}
-                      >
-                        {reportPreview.diff > 0 ? '+' : ''}¥ {formatMoney(Math.abs(reportPreview.diff))}
-                      </p>
-                      <p
-                        className={cn(
-                          'mt-1 text-xs tabular-nums',
-                          reportPreview.diff > 0
-                            ? 'text-emerald-600'
-                            : reportPreview.diff < 0
-                              ? 'text-rose-600'
-                              : 'text-muted-foreground',
-                        )}
-                      >
-                        {reportPreview.diffPctText}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* 明细表 */}
-                  <h2 className="mt-6 text-sm font-semibold text-foreground">各账户余额明细</h2>
-                  <div className="mt-2 overflow-hidden rounded-md border border-border">
-                    <table className="w-full text-sm">
-                      <thead className="bg-foreground text-background">
-                        <tr>
-                          <th className="px-3 py-2 text-left font-medium">账户</th>
-                          <th className="px-3 py-2 text-left font-medium">类型</th>
-                          <th className="px-3 py-2 text-right font-medium">
-                            本月{reportPreview.curMonthNum}月
-                          </th>
-                          <th className="px-3 py-2 text-right font-medium">变化</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {reportPreview.rows.map((r, i) => (
-                          <tr
-                            key={r.accountId}
-                            className={cn(
-                              'border-t border-border/60',
-                              i % 2 === 0 && 'bg-muted/30',
-                            )}
-                          >
-                            <td className="px-3 py-2">
-                              <span className="mr-1">{r.icon}</span>
-                              {r.name}
-                            </td>
-                            <td className="px-3 py-2 text-muted-foreground">
-                              {r.kindLabel}
-                            </td>
-                            <td
-                              className={cn(
-                                'px-3 py-2 text-right tabular-nums',
-                                r.amount < 0 && 'text-rose-600',
-                              )}
-                            >
-                              {formatMoney(r.amount)}
-                            </td>
-                            <td
-                              className={cn(
-                                'px-3 py-2 text-right tabular-nums',
-                                r.change > 0 && 'text-emerald-600',
-                                r.change < 0 && 'text-rose-600',
-                                r.change === 0 && 'text-muted-foreground/50',
-                              )}
-                            >
-                              {r.change === 0
-                                ? '—'
-                                : (r.change > 0 ? '+' : '') + formatMoney(r.change)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="border-t-2 border-foreground/30 bg-muted/50">
-                          <td className="px-3 py-2 font-semibold" colSpan={2}>
-                            本月合计
-                          </td>
-                          <td
-                            className={cn(
-                              'px-3 py-2 text-right font-semibold tabular-nums',
-                              reportPreview.currentTotal < 0 && 'text-rose-600',
-                            )}
-                          >
-                            ¥ {formatMoney(reportPreview.currentTotal)}
-                          </td>
-                          <td
-                            className={cn(
-                              'px-3 py-2 text-right font-semibold tabular-nums',
-                              reportPreview.diff > 0 && 'text-emerald-600',
-                              reportPreview.diff < 0 && 'text-rose-600',
-                            )}
-                          >
-                            {reportPreview.diff > 0 ? '+' : ''}¥{' '}
-                            {formatMoney(Math.abs(reportPreview.diff))}
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                  加载中…
-                </div>
-              )}
-            </div>
-            {/* 底部 footer：右下"下载 PDF" */}
-            <div data-dialog-footer className="flex items-center justify-end gap-2 border-t border-border bg-card px-4 py-3">
-              <Button
-                variant="default"
-                size="sm"
-                onClick={downloadPdfFile}
-                className="gap-1.5"
-              >
-                <Download className="h-3.5 w-3.5" />
-                下载 PDF
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </main>
+
+      {/* ===== 月度明细打印区（仅打印时显示） ===== */}
+      <div id="month-detail-print-area" className="hidden">
+        <h1 className="text-center text-2xl font-bold">
+          个人记账 · 账户余额月度明细
+        </h1>
+        <p className="mt-2 text-center text-lg">{monthDetail.curMonthLabel}</p>
+        <p className="mt-1 text-center text-xs text-muted-foreground">
+          生成时间：{dayjs().format('YYYY-MM-DD HH:mm')}
+        </p>
+
+        {/* 汇总卡 */}
+        <div className="mt-6 grid grid-cols-3 gap-3">
+          <div className="rounded-lg border border-border p-4 text-center">
+            <p className="text-xs text-muted-foreground">本月总余额</p>
+            <p
+              className={cn(
+                'mt-1 text-xl font-bold tabular-nums',
+                monthDetail.currentTotal >= 0 ? 'text-emerald-600' : 'text-rose-600',
+              )}
+            >
+              ¥ {formatMoney(monthDetail.currentTotal)}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {monthDetail.curMonthLabel} 期末
+            </p>
+          </div>
+          <div className="rounded-lg border border-border p-4 text-center">
+            <p className="text-xs text-muted-foreground">上月总余额</p>
+            <p className="mt-1 text-xl font-bold tabular-nums">
+              ¥ {formatMoney(monthDetail.prevTotal)}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {monthDetail.prevMonthLabel} 期末
+            </p>
+          </div>
+          <div className="rounded-lg border border-border p-4 text-center">
+            <p className="text-xs text-muted-foreground">环比变化</p>
+            <p
+              className={cn(
+                'mt-1 text-xl font-bold tabular-nums',
+                monthDetail.diff > 0
+                  ? 'text-emerald-600'
+                  : monthDetail.diff < 0
+                    ? 'text-rose-600'
+                    : 'text-muted-foreground',
+              )}
+            >
+              {monthDetail.diff > 0 ? '+' : ''}¥ {formatMoney(Math.abs(monthDetail.diff))}
+            </p>
+            <p
+              className={cn(
+                'mt-1 text-xs tabular-nums',
+                monthDetail.diff > 0
+                  ? 'text-emerald-600'
+                  : monthDetail.diff < 0
+                    ? 'text-rose-600'
+                    : 'text-muted-foreground',
+              )}
+            >
+              {monthDetail.diffPct === null
+                ? '— 无上月数据'
+                : (monthDetail.diff > 0 ? '↑ +' : monthDetail.diff < 0 ? '↓ ' : '') +
+                  monthDetail.diffPct.toFixed(2) +
+                  '% 较上月'}
+            </p>
+          </div>
+        </div>
+
+        {/* 明细表 */}
+        <h2 className="mt-6 text-sm font-semibold">各账户余额明细</h2>
+        <table className="mt-2 w-full border-collapse text-sm" style={{ tableLayout: 'fixed' }}>
+          <colgroup>
+            <col style={{ width: '22%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '18%' }} />
+          </colgroup>
+          <thead>
+            <tr className="bg-foreground text-background">
+              <th className="border border-border px-3 py-2 text-left font-medium">账户</th>
+              <th className="border border-border px-3 py-2 text-left font-medium">类型</th>
+              <th className="border border-border px-3 py-2 text-right font-medium">
+                上月余额
+              </th>
+              <th className="border border-border px-3 py-2 text-right font-medium">
+                本月余额
+              </th>
+              <th className="border border-border px-3 py-2 text-right font-medium">
+                变化金额
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {monthDetail.rows.map((r, i) => (
+              <tr
+                key={r.accountId}
+                className={cn(i % 2 === 0 ? 'bg-muted/30' : 'bg-background')}
+              >
+                <td className="border border-border px-3 py-2">
+                  <span className="mr-1">{r.icon}</span>
+                  {r.name}
+                </td>
+                <td className="border border-border px-3 py-2 text-muted-foreground">
+                  {r.kindLabel}
+                </td>
+                <td className="border border-border px-3 py-2 text-right tabular-nums">
+                  {formatMoney(r.prevAmount)}
+                </td>
+                <td
+                  className={cn(
+                    'border border-border px-3 py-2 text-right tabular-nums',
+                    r.amount < 0 && 'text-rose-600',
+                  )}
+                >
+                  {formatMoney(r.amount)}
+                </td>
+                <td
+                  className={cn(
+                    'border border-border px-3 py-2 text-right tabular-nums',
+                    r.change > 0 && 'text-emerald-600',
+                    r.change < 0 && 'text-rose-600',
+                    r.change === 0 && 'text-muted-foreground/50',
+                  )}
+                >
+                  {r.change === 0
+                    ? '—'
+                    : (r.change > 0 ? '+' : '') + formatMoney(r.change)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="bg-muted/50 font-semibold">
+              <td className="border border-border px-3 py-2" colSpan={2}>
+                本月合计
+              </td>
+              <td className="border border-border px-3 py-2 text-right tabular-nums">
+                ¥ {formatMoney(monthDetail.prevTotal)}
+              </td>
+              <td
+                className={cn(
+                  'border border-border px-3 py-2 text-right tabular-nums',
+                  monthDetail.currentTotal < 0 && 'text-rose-600',
+                )}
+              >
+                ¥ {formatMoney(monthDetail.currentTotal)}
+              </td>
+              <td
+                className={cn(
+                  'border border-border px-3 py-2 text-right tabular-nums',
+                  monthDetail.diff > 0 && 'text-emerald-600',
+                  monthDetail.diff < 0 && 'text-rose-600',
+                )}
+              >
+                {monthDetail.diff > 0 ? '+' : ''}¥ {formatMoney(Math.abs(monthDetail.diff))}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          数据来源：本地 SQLite（{dayjs(month).format('YYYY-MM')} 期末快照）
+        </p>
+      </div>
     </div>
   )
 }

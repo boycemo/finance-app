@@ -81,77 +81,212 @@
   }
 }
 
-/* 打印样式：账户余额月度报表 */
+/* ===== 打印样式：导出当前页面为 PDF ===== */
 @page {
-  size: A4 landscape;
-  margin: 8mm;
+  size: A4;
+  margin: 10mm;
 }
 
 @media print {
-  /* 1. 隐藏所有非打印内容（不依赖具体 DOM 结构） */
-  body * {
-    visibility: hidden !important;
-  }
-  /* 2. 但 Dialog 容器、.print-area 及其所有子元素重新可见 */
-  [role='dialog'],
-  [role='dialog'] *,
-  .print-area,
-  .print-area * {
-    visibility: visible !important;
-  }
-  /* 3. 弹窗自身：变成静态块级元素、占满页面 */
-  [role='dialog'] {
-    position: static !important;
-    background: white !important;
-    box-shadow: none !important;
-    max-width: 100% !important;
-    width: 100% !important;
-    height: auto !important;
-    max-height: none !important;
-    padding: 0 !important;
-    border: 0 !important;
-  }
-  /* 4. 弹窗里的 header / footer 隐藏（保留 .print-area） */
-  [role='dialog'] [data-dialog-header],
-  [role='dialog'] [data-dialog-footer],
-  [role='dialog'] [data-dialog-body] {
+  /* 隐藏顶部导航栏 */
+  header {
     display: none !important;
   }
-  /* 5. .print-area 单独显示并填满页面 */
-  .print-area {
+
+  /* 隐藏 Tab 切换栏 */
+  .sticky.top-16.z-20 {
+    display: none !important;
+  }
+
+  /* 隐藏弹窗、Popover 浮层 */
+  [role='dialog'],
+  [data-radix-popper-content-wrapper] {
+    display: none !important;
+  }
+
+  /* 隐藏主内容区里的所有按钮、文件输入 */
+  #dashboard-print-area button,
+  #dashboard-print-area input[type='file'] {
+    display: none !important;
+  }
+
+  /* 隐藏页脚 */
+  #dashboard-print-area footer {
+    display: none !important;
+  }
+
+  /* 主内容区铺满 */
+  #dashboard-print-area {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* 强制白色背景、深色文字 */
+  body {
+    background: white !important;
+  }
+  body,
+  #dashboard-print-area,
+  #dashboard-print-area * {
+    color: #0f172a !important;
+  }
+
+  /* 卡片简化 */
+  #dashboard-print-area [class*='rounded-xl'],
+  #dashboard-print-area [class*='rounded-lg'] {
+    border-radius: 6px !important;
+    box-shadow: none !important;
+  }
+
+  /* 移除滚动限制，确保内容完整打印 */
+  #dashboard-print-area .overflow-auto,
+  #dashboard-print-area .max-h-\[420px\],
+  #dashboard-print-area .max-h-80 {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* 表格表头黑底白字 */
+  #dashboard-print-area thead {
+    background: #0f172a !important;
+  }
+  #dashboard-print-area th {
+    background: #0f172a !important;
+    color: white !important;
+  }
+
+  /* 避免表格、卡片在分页处被截断 */
+  #dashboard-print-area table,
+  #dashboard-print-area .rounded-xl,
+  #dashboard-print-area .rounded-lg {
+    page-break-inside: avoid;
+  }
+
+  /* Recharts 图表适配 */
+  #dashboard-print-area .recharts-surface {
+    max-width: 100% !important;
+  }
+
+  /* ===== 月度明细打印模式 ===== */
+  /* 屏幕默认隐藏，打印时由 data-print-mode 切换显示 */
+  body[data-print-mode='month'] #dashboard-print-area,
+  body[data-print-mode='month'] header,
+  body[data-print-mode='month'] .sticky.top-16.z-20,
+  body[data-print-mode='month'] button,
+  body[data-print-mode='month'] footer,
+  body[data-print-mode='month'] [role='dialog'],
+  body[data-print-mode='month'] [data-radix-popper-content-wrapper] {
+    display: none !important;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area {
     display: block !important;
     position: static !important;
     background: white !important;
     color: #0f172a !important;
-    padding: 12px !important;
+    padding: 16px 24px !important;
     margin: 0 !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    max-width: 100% !important;
-    width: 100% !important;
     font-size: 10pt;
+    line-height: 1.5;
   }
-  .print-area * {
+
+  body[data-print-mode='month'] #month-detail-print-area * {
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area h1 {
+    font-size: 18pt !important;
+    font-weight: 700 !important;
+    margin-bottom: 4px !important;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area h2 {
+    font-size: 12pt !important;
+    font-weight: 600 !important;
+    margin-bottom: 6px !important;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area .grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
+    margin: 12px 0 !important;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+    font-size: 9pt !important;
+    page-break-inside: auto;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area colgroup col {
+    width: auto !important;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area thead {
+    display: table-header-group !important;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area thead tr {
+    background: #0f172a !important;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area th {
+    background: #0f172a !important;
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    padding: 6px 8px !important;
+    font-weight: 600 !important;
+    text-align: left !important;
+    border: 1px solid #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area th:last-child {
+    text-align: right !important;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area td {
+    padding: 5px 8px !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    word-break: break-word;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area td:first-child {
+    text-align: left !important;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area td:nth-child(n+3) {
+    text-align: right !important;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area tbody tr {
+    background: #ffffff !important;
+    page-break-inside: avoid;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area tbody tr:nth-child(even) {
+    background: #f8fafc !important;
+  }
+
+  body[data-print-mode='month'] #month-detail-print-area tfoot td {
+    background: #e2e8f0 !important;
+    font-weight: 600 !important;
     color: #0f172a !important;
   }
-  /* 6. 表格：避免分页 */
-  .print-area table {
+
+  body[data-print-mode='month'] #month-detail-print-area tfoot tr {
     page-break-inside: avoid;
-    border-collapse: collapse;
-    width: 100%;
-  }
-  /* 7. 表头黑底白字保留 */
-  .print-area thead {
-    background: #0f172a !important;
-  }
-  .print-area th {
-    background: #0f172a !important;
-    color: white !important;
-    padding: 8px 12px !important;
-  }
-  .print-area td {
-    padding: 6px 12px !important;
-    border-bottom: 1px solid #e2e8f0 !important;
   }
 }
 
