@@ -56,12 +56,12 @@ export default function RecordsView({ month, editing, onEdit, onCancelEdit }: Pr
 
       {/* 明细区 */}
       <section>
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="border-border/60 bg-card shadow-sm">
+          <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 pb-3">
             <div className="flex flex-wrap items-end justify-between gap-2">
               <div>
-                <CardTitle>本月明细</CardTitle>
-                <CardDescription>
+                <CardTitle className="font-serif text-base font-semibold">本月明细</CardTitle>
+                <CardDescription className="text-xs">
                   共 {monthSummary.count} 笔 · 支出 ¥{formatMoney(monthSummary.expense)} · 收入 ¥
                   {formatMoney(monthSummary.income)}
                 </CardDescription>
@@ -103,7 +103,7 @@ export default function RecordsView({ month, editing, onEdit, onCancelEdit }: Pr
               ))}
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             <RecordList
               records={monthRecords}
               categories={categories}

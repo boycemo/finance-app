@@ -135,20 +135,20 @@ export default function AssetTable({
       .sort((a, b) => (a.date < b.date ? 1 : -1))
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+    <Card className="overflow-hidden border-border/60 bg-card shadow-sm">
+      <CardHeader className="flex-row items-center justify-between space-y-0 border-b border-border/60 bg-muted/20 px-4 py-3">
         <div>
-          <CardTitle>我的账户</CardTitle>
-          <CardDescription>
-            每个账户可开启「小项目」（余额宝 / 股票 / 基金…），按小项目独立记余额 · 拖动 ⠿ 可排序
+          <CardTitle className="font-serif text-base font-semibold">账户</CardTitle>
+          <CardDescription className="text-xs">
+            悬停预览 · 点击展开小项目
           </CardDescription>
         </div>
-        <Button size="sm" variant="outline" onClick={() => onManageAccount()} className="gap-1.5">
-          <Plus className="h-4 w-4" />
+        <Button size="sm" variant="ghost" onClick={() => onManageAccount()} className="gap-1.5 text-xs">
+          <Plus className="h-3.5 w-3.5" />
           新增账户
         </Button>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2 p-3">
         {active.length === 0 && (
           <p className="py-8 text-center text-sm text-muted-foreground">
             还没有账户，点右上角「新增账户」添加（比如：支付宝、京东金融、同花顺…）

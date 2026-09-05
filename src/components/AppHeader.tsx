@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import dayjs from 'dayjs'
-import { Calendar, Database, Download, FileText, Moon, Sun, Wallet } from 'lucide-react'
+import { Calendar, Database, FileText, Menu, Moon, Sun, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
@@ -17,15 +17,18 @@ interface Props {
   /** 当前正在编辑的记录（编辑态复用录入表单） */
   editing: FinanceRecord | null
   onCancelEdit: () => void
+  /** 移动端打开侧边栏抽屉 */
+  onOpenMobileNav: () => void
 }
 
-/** 顶部导航：Logo + 月份选择 + 打印导出 + 主题切换 + 记一笔 */
+/** 顶部导航：Logo + 标题 + 月份/导出/主题/记一笔 */
 export default function AppHeader({
   month,
   onMonthChange,
   showRecordForm,
   editing,
   onCancelEdit,
+  onOpenMobileNav,
 }: Props) {
   const { categories, apiOnline, addRecord, updateRecord } = useAppData()
   const [monthPickerOpen, setMonthPickerOpen] = useState(false)
@@ -52,7 +55,6 @@ export default function AppHeader({
 
   const handlePrintFull = () => {
     document.body.removeAttribute('data-print-mode')
-    // 给浏览器一点时间应用样式
     requestAnimationFrame(() => window.print())
   }
 
@@ -62,36 +64,38 @@ export default function AppHeader({
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Wallet className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-base font-semibold leading-tight">个人记账</h1>
-            <p className="text-xs leading-tight text-muted-foreground flex items-center gap-1">
-              <Database className="h-3 w-3" />
-              SQLite 本地存储
-              <span
-                className={cn(
-                  'ml-1 inline-block h-1.5 w-1.5 rounded-full',
-                  apiOnline ? 'bg-emerald-500' : 'bg-rose-500',
-                )}
-                title={apiOnline ? '后端在线' : '后端离线'}
-              />
-            </p>
+    <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-3">
+          {/* 移动端：打开侧边栏抽屉 */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onOpenMobileNav}
+            aria-label="打开导航菜单"
+            className="h-10 w-10 lg:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          {/* 移动端状态点 */}
+          <div className="flex items-center gap-1.5 lg:hidden">
+            <span
+              className={cn(
+                'inline-block h-2 w-2 rounded-full',
+                apiOnline ? 'bg-emerald-500' : 'bg-rose-500',
+              )}
+              title={apiOnline ? '后端在线' : '后端离线'}
+            />
+            <span className="text-[11px] text-muted-foreground">SQLite</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {/* 月份选择器 */}
           <Popover open={monthPickerOpen} onOpenChange={setMonthPickerOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2 border-border/70 bg-card/80 shadow-sm">
                 <Calendar className="h-4 w-4" />
-                <span className="hidden sm:inline">
-                  {dayjs(month).format('YYYY年MM月')}
-                </span>
+                <span className="hidden sm:inline">{dayjs(month).format('YYYY年MM月')}</span>
                 <span className="sm:hidden">{dayjs(month).format('YYYY-MM')}</span>
               </Button>
             </PopoverTrigger>
@@ -105,7 +109,7 @@ export default function AppHeader({
                       setMonthPickerOpen(false)
                     }}
                     className={cn(
-                      'flex w-full items-center justify-between rounded-sm px-3 py-1.5 text-sm transition-colors',
+                      'flex w-full items-center justify-between rounded-md px-3 py-1.5 text-sm transition-colors',
                       opt.value === month
                         ? 'bg-primary/10 font-medium text-primary'
                         : 'hover:bg-muted',
@@ -123,24 +127,24 @@ export default function AppHeader({
             </PopoverContent>
           </Popover>
 
-          {/* 月度明细 PDF（按当前选中月份） */}
           <Button
             variant="outline"
             size="icon"
             onClick={handlePrintMonth}
             title={`打印 ${dayjs(month).format('YYYY年MM月')} 账户余额明细`}
+            className="border-border/70 bg-card/80 shadow-sm"
           >
             <FileText className="h-4 w-4" />
           </Button>
 
-          {/* 整页 PDF（账户余额全览 / 收支记账全页） */}
           <Button
             variant="outline"
             size="icon"
             onClick={handlePrintFull}
             title="导出当前页面为 PDF"
+            className="border-border/70 bg-card/80 shadow-sm"
           >
-            <Download className="h-4 w-4" />
+            <Wallet className="h-4 w-4" />
           </Button>
 
           <Button
@@ -148,6 +152,7 @@ export default function AppHeader({
             size="icon"
             onClick={toggleTheme}
             title={theme === 'dark' ? '切换到浅色模式' : '切换到暗色模式'}
+            className="border-border/70 bg-card/80 shadow-sm"
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>

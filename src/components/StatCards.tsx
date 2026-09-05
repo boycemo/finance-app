@@ -1,5 +1,4 @@
 import { ArrowDownRight, ArrowUpRight, Wallet } from 'lucide-react'
-import { Card } from '@/components/ui/card'
 import { cn, formatMoney } from '@/lib/utils'
 
 interface Props {
@@ -15,51 +14,45 @@ export default function StatCards({ income, expense, balance, monthLabel }: Prop
       key: 'income',
       title: `${monthLabel} 收入`,
       value: income,
-      color: 'text-income',
-      bg: 'bg-income/10',
-      ring: 'ring-income/20',
-      icon: <ArrowUpRight className="h-5 w-5" />,
+      color: 'text-emerald-600 dark:text-emerald-400',
+      icon: <ArrowUpRight className="h-4 w-4" />,
     },
     {
       key: 'expense',
       title: `${monthLabel} 支出`,
       value: expense,
-      color: 'text-expense',
-      bg: 'bg-expense/10',
-      ring: 'ring-expense/20',
-      icon: <ArrowDownRight className="h-5 w-5" />,
+      color: 'text-rose-600 dark:text-rose-400',
+      icon: <ArrowDownRight className="h-4 w-4" />,
     },
     {
       key: 'balance',
       title: `${monthLabel} 结余`,
       value: balance,
-      color: balance >= 0 ? 'text-balance' : 'text-expense',
-      bg: balance >= 0 ? 'bg-balance/10' : 'bg-expense/10',
-      ring: balance >= 0 ? 'ring-balance/20' : 'ring-expense/20',
-      icon: <Wallet className="h-5 w-5" />,
+      color: balance >= 0 ? 'text-primary dark:text-primary' : 'text-rose-600 dark:text-rose-400',
+      icon: <Wallet className="h-4 w-4" />,
     },
   ]
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       {items.map((item) => (
-        <Card
+        <div
           key={item.key}
           className={cn(
-            'flex items-center gap-4 p-5 ring-1 ring-inset transition-shadow hover:shadow-md',
-            item.ring,
+            'rounded-xl border border-border/60 bg-card p-4 shadow-sm',
+            'transition-all duration-200 hover:border-border',
           )}
         >
-          <div className={cn('flex h-12 w-12 items-center justify-center rounded-xl', item.bg, item.color)}>
-            {item.icon}
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground/70">
+            <span className={cn('flex items-center justify-center rounded-md bg-muted/60 p-1', item.color)}>
+              {item.icon}
+            </span>
+            {item.title}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm text-muted-foreground">{item.title}</p>
-            <p className={cn('mt-1 truncate text-2xl font-bold tabular-nums', item.color)}>
-              ¥ {formatMoney(item.value)}
-            </p>
-          </div>
-        </Card>
+          <p className={cn('mt-2 font-serif text-2xl font-semibold tabular-nums tracking-tight', item.color)}>
+            ¥ {formatMoney(item.value)}
+          </p>
+        </div>
       ))}
     </div>
   )

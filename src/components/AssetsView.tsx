@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import dayjs from 'dayjs'
-import { ListChecks, Pencil, Trash2 } from 'lucide-react'
+import { Download, ListChecks, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -24,7 +24,6 @@ import HistoryEditDialog from './HistoryEditDialog'
 import BatchEntryDialog from './BatchEntryDialog'
 
 export default function AssetsView() {
-  // 直接订阅全局数据上下文（重命名为 on* 风格，保持下方代码不变）
   const {
     accounts,
     subAccounts,
@@ -44,27 +43,24 @@ export default function AssetsView() {
     batchDeleteBalances: onBatchDeleteBalances,
     batchDeleteByDate: onBatchDeleteByDate,
     batchAddBalances: onBatchAddBalances,
+    exportBackup,
   } = useAppData()
-  // 记余额
+
   const [balanceOpen, setBalanceOpen] = useState(false)
   const [balanceAccount, setBalanceAccount] = useState<Account | null>(null)
   const [balanceSubId, setBalanceSubId] = useState<string>()
 
-  // 账户表单
   const [accountFormOpen, setAccountFormOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<Account | null>(null)
 
-  // 小项目表单
   const [subFormOpen, setSubFormOpen] = useState(false)
   const [subFormAccount, setSubFormAccount] = useState<Account | null>(null)
   const [editingSub, setEditingSub] = useState<SubAccount | null>(null)
 
-  // 历史
   const [historyAccount, setHistoryAccount] = useState<Account | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [editingBalance, setEditingBalance] = useState<BalanceSnapshot | null>(null)
 
-  // 批量录入
   const [batchOpen, setBatchOpen] = useState(false)
 
   const handleOpenHistory = (acc: Account) => {
@@ -95,7 +91,6 @@ export default function AssetsView() {
     setSubFormOpen(true)
   }
 
-  // 历史（按日期倒序，每个日期一个分组）
   const history = useMemo(() => {
     if (!historyAccount) return []
     return balances
@@ -103,7 +98,6 @@ export default function AssetsView() {
       .sort((a, b) => (a.date < b.date ? 1 : -1))
   }, [historyAccount, balances])
 
-  // 按日期分组
   const historyByDate = useMemo(() => {
     const map = new Map<string, BalanceSnapshot[]>()
     history.forEach((b) => {
@@ -114,7 +108,6 @@ export default function AssetsView() {
     return Array.from(map.entries()).sort((a, b) => (a[0] < b[0] ? 1 : -1))
   }, [history])
 
-  // 统一新增账户：创建后自动为所有历史月份补 0 余额记录
   const handleCreateAccount = async (data: {
     name: string
     kind: AccountKind
@@ -123,7 +116,6 @@ export default function AssetsView() {
     note?: string
   }) => {
     const created = await onAddAccount(data)
-    // 补历史 0 记录（从最早记录月到当前月）
     const months = allMonthsFromRecords(balances)
     if (created && months.length > 0) {
       await onBatchAddBalances(
@@ -137,16 +129,35 @@ export default function AssetsView() {
     }
   }
 
-  return (
-    <div className="space-y-4">
-      <AssetOverview accounts={accounts} balances={balances} subAccounts={subAccounts} />
+  const currentMonth = dayjs().format('YYYY-MM')
 
-      {/* 工具条：批量录入 */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2">
-        <p className="text-xs text-muted-foreground">
-          一次性给多个账户/小项目录余额，月底盘点神器
-        </p>
+  return (
+    <div className="space-y-5">
+      {/* 页面标题与操作 */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-serif text-2xl font-semibold tracking-tight text-foreground">
+            资产总览
+          </h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">{dayjs().format('YYYY年M月')} · 账户余额</p>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 border-border/70 bg-card/80 shadow-sm"
+            onClick={async () => {
+              try {
+                await exportBackup()
+                alert('备份已导出')
+              } catch (err) {
+                alert(`导出失败：${String(err)}`)
+              }
+            }}
+          >
+            <Download className="h-3.5 w-3.5" />
+            导出备份
+          </Button>
           <Button size="sm" onClick={() => setBatchOpen(true)} className="gap-1.5">
             <ListChecks className="h-3.5 w-3.5" />
             批量录入余额
@@ -154,16 +165,21 @@ export default function AssetsView() {
         </div>
       </div>
 
+      {/* 资产总览大卡 */}
+      <AssetOverview accounts={accounts} balances={balances} subAccounts={subAccounts} month={currentMonth} />
+
       {error && (
         <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
           资产数据加载失败：{error}
         </p>
       )}
 
-      {loading ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">加载资产数据…</p>
-      ) : (
-        <>
+      {/* 两栏主体 */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        {/* 左侧：账户列表 */}
+        {loading ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">加载资产数据…</p>
+        ) : (
           <AssetTable
             accounts={accounts}
             balances={balances}
@@ -178,11 +194,13 @@ export default function AssetsView() {
             onDeleteSubAccount={(sub) => onDeleteSubAccount(sub.id)}
             onReorder={onReorderAccounts}
           />
-          <BalanceReport accounts={accounts} balances={balances} subAccounts={subAccounts} />
-        </>
-      )}
+        )}
 
-      {/* 记录余额 */}
+        {/* 右侧：余额报表（趋势 + 月度表） */}
+        <BalanceReport accounts={accounts} balances={balances} subAccounts={subAccounts} />
+      </div>
+
+      {/* 弹窗保持挂载 */}
       <BalanceForm
         open={balanceOpen}
         account={balanceAccount}
@@ -197,7 +215,6 @@ export default function AssetsView() {
         }}
       />
 
-      {/* 新增/编辑账户 */}
       <AccountForm
         open={accountFormOpen}
         account={editingAccount}
@@ -214,7 +231,6 @@ export default function AssetsView() {
         }}
       />
 
-      {/* 新增/编辑小项目 */}
       <SubAccountForm
         open={subFormOpen}
         account={subFormAccount}
@@ -233,7 +249,6 @@ export default function AssetsView() {
         }}
       />
 
-      {/* 历史快照弹窗 */}
       <Dialog
         open={!!historyAccount}
         onOpenChange={(v) => {
@@ -254,14 +269,11 @@ export default function AssetsView() {
             <p className="py-8 text-center text-sm text-muted-foreground">还没有余额记录</p>
           ) : (
             <>
-              {/* 批量操作栏 */}
               <div className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-3 py-1.5">
                 <button
                   onClick={() => {
                     setSelectedIds((prev) =>
-                      prev.size === history.length
-                        ? new Set()
-                        : new Set(history.map((b) => b.id)),
+                      prev.size === history.length ? new Set() : new Set(history.map((b) => b.id)),
                     )
                   }}
                   className="text-xs font-medium text-primary transition-opacity hover:opacity-80"
@@ -291,7 +303,6 @@ export default function AssetsView() {
               <ul className="max-h-80 space-y-3 overflow-y-auto">
                 {historyByDate.map(([date, list]) => (
                   <li key={date}>
-                    {/* 日期分组头 */}
                     <div className="flex items-center justify-between rounded-md bg-muted/40 px-2 py-1 text-xs">
                       <span className="font-medium text-foreground">
                         {dayjs(date).format('YYYY年MM月DD日')}
@@ -300,9 +311,7 @@ export default function AssetsView() {
                       <button
                         onClick={() => {
                           if (
-                            confirm(
-                              `删除 ${date} 的全部 ${list.length} 条余额记录？此操作不可恢复。`,
-                            )
+                            confirm(`删除 ${date} 的全部 ${list.length} 条余额记录？此操作不可恢复。`)
                           ) {
                             onBatchDeleteByDate([date])
                           }
@@ -315,7 +324,6 @@ export default function AssetsView() {
                       </button>
                     </div>
 
-                    {/* 该日期下的记录 */}
                     <ul className="mt-1 space-y-1">
                       {list.map((b) => {
                         const sub = b.subAccountId
@@ -352,9 +360,7 @@ export default function AssetsView() {
                                   </span>
                                 )}
                               </p>
-                              {b.note && (
-                                <p className="text-xs text-muted-foreground">{b.note}</p>
-                              )}
+                              {b.note && <p className="text-xs text-muted-foreground">{b.note}</p>}
                             </div>
                             <Button
                               variant="ghost"
@@ -390,7 +396,6 @@ export default function AssetsView() {
         </DialogContent>
       </Dialog>
 
-      {/* 批量录入 */}
       <BatchEntryDialog
         open={batchOpen}
         onClose={() => setBatchOpen(false)}
@@ -401,7 +406,6 @@ export default function AssetsView() {
         onCreateAccount={(data) => handleCreateAccount(data)}
       />
 
-      {/* 编辑单条余额 */}
       <HistoryEditDialog
         open={!!editingBalance}
         account={historyAccount}

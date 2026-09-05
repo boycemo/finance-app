@@ -2,65 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== Noise texture SVG filter ===== */
+svg#noise-filter {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 224 71% 4%;
+    /* ── 墨账风格：暖纸白底 + 靛青墨蓝主色 ── */
+    --background: 40 20% 96%;
+    --foreground: 222 35% 15%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 224 71% 4%;
+    --card: 40 25% 99%;
+    --card-foreground: 222 35% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
+    --popover: 40 25% 99%;
+    --popover-foreground: 222 35% 15%;
 
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
+    /* 主色：靛青墨蓝 */
+    --primary: 222 50% 45%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 9% 25%;
+    --secondary: 40 15% 92%;
+    --secondary-foreground: 222 35% 15%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 40 15% 92%;
+    --muted-foreground: 220 10% 45%;
 
-    --accent: 220 14% 96%;
-    --accent-foreground: 220 9% 25%;
+    --accent: 40 18% 90%;
+    --accent-foreground: 222 35% 15%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 221 83% 53%;
+    --border: 40 12% 87%;
+    --input: 40 12% 87%;
+    --ring: 222 50% 45%;
 
-    --radius: 0.6rem;
+    --radius: 0.75rem;
 
-    --income: 142 71% 45%;
-    --expense: 0 84% 60%;
-    --balance: 221 83% 53%;
+    /* 收入-支出语义色 */
+    --income: 160 65% 38%;
+    --expense: 0 72% 52%;
+    --balance: 222 50% 45%;
+
+    /* 纸面微阴影 */
+    --paper-shadow: 0 1px 2px rgba(60, 50, 30, 0.04), 0 4px 12px rgba(60, 50, 30, 0.03);
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 98%;
-    /* 暗色下 primary 调柔（不刺眼） */
-    --primary: 217 76% 55%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 14%;
-    --muted-foreground: 215 20% 70%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 63% 40%;
-    --destructive-foreground: 210 40% 98%;
-    /* 暗色下 border 调亮一档（让卡片边界清晰） */
-    --border: 217 28% 22%;
-    --input: 217 28% 22%;
-    --ring: 217 76% 55%;
+    /* ── 暗色主题：深墨蓝底 ── */
+    --background: 222 30% 8%;
+    --foreground: 40 15% 95%;
+
+    --card: 222 28% 10%;
+    --card-foreground: 40 15% 95%;
+
+    --popover: 222 28% 10%;
+    --popover-foreground: 40 15% 95%;
+
+    --primary: 218 55% 62%;
+    --primary-foreground: 222 35% 8%;
+
+    --secondary: 222 22% 16%;
+    --secondary-foreground: 40 15% 95%;
+
+    --muted: 222 22% 15%;
+    --muted-foreground: 220 12% 60%;
+
+    --accent: 222 22% 18%;
+    --accent-foreground: 40 15% 95%;
+
+    --destructive: 0 55% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 222 18% 20%;
+    --input: 222 18% 20%;
+    --ring: 218 55% 62%;
+
+    --income: 158 55% 48%;
+    --expense: 0 65% 58%;
+    --balance: 218 55% 62%;
+
+    --paper-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -70,15 +97,38 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
     font-feature-settings: 'rlig' 1, 'calt' 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* 极淡的纸纹感 */
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.018'/%3E%3C/svg%3E"),
+      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(40 18% 94%) 100%);
+    background-attachment: fixed;
   }
   html,
   body,
   #root {
     @apply h-full;
   }
+
+  /* 全局标题使用衬线字体 */
+  h1, h2, h3, h4 {
+    font-family: 'Noto Serif SC', 'PingFang SC', 'Microsoft YaHei', serif;
+  }
+
+  /* 数值强调字体 */
+  .tabular-nums {
+    font-feature-settings: 'tnum' 1;
+  }
+}
+
+/* 暗色模式背景 */
+.dark body {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(222 30% 6%) 100%);
 }
 
 /* ===== 打印样式：导出当前页面为 PDF ===== */
@@ -93,7 +143,8 @@
     display: none !important;
   }
 
-  /* 隐藏 Tab 切换栏 */
+  /* 隐藏侧边栏（工作台布局） */
+  aside,
   .sticky.top-16.z-20 {
     display: none !important;
   }
@@ -170,9 +221,9 @@
   }
 
   /* ===== 月度明细打印模式 ===== */
-  /* 屏幕默认隐藏，打印时由 data-print-mode 切换显示 */
   body[data-print-mode='month'] #dashboard-print-area,
   body[data-print-mode='month'] header,
+  body[data-print-mode='month'] aside,
   body[data-print-mode='month'] .sticky.top-16.z-20,
   body[data-print-mode='month'] button,
   body[data-print-mode='month'] footer,

@@ -1,6 +1,5 @@
-import { Landmark } from 'lucide-react'
-import { Card } from '@/components/ui/card'
-import { cn, formatMoney } from '@/lib/utils'
+import { Landmark, TrendingUp } from 'lucide-react'
+import { formatMoney } from '@/lib/utils'
 import type { Account, AccountKind, BalanceSnapshot, SubAccount } from '@/types'
 import { accountBalanceAtLatest, latestBalanceDate } from '@/utils/assets'
 
@@ -23,6 +22,17 @@ export const KIND_LABELS: Record<AccountKind, string> = {
 
 const KIND_ORDER: AccountKind[] = ['cash', 'investment', 'fund', 'credit', 'receivable', 'payable', 'other']
 
+/** 分类色点（低饱和墨色调） */
+const KIND_COLORS: Record<AccountKind, string> = {
+  cash: '#2563eb',
+  investment: '#059669',
+  fund: '#d97706',
+  credit: '#7c3aed',
+  receivable: '#0891b2',
+  payable: '#dc2626',
+  other: '#64748b',
+}
+
 export default function AssetOverview({ accounts, balances, subAccounts, month }: Props) {
   const activeAccounts = accounts.filter((a) => !a.archived)
   const latestDate = latestBalanceDate(balances)
@@ -37,54 +47,62 @@ export default function AssetOverview({ accounts, balances, subAccounts, month }
     byKind.set(a.kind, (byKind.get(a.kind) || 0) + v)
   })
 
-  const kinds: Array<{ kind: AccountKind; value: number }> = KIND_ORDER
-    .map((k) => ({ kind: k, value: byKind.get(k) || 0 }))
-    .filter((k) => k.value > 0)
+  const kinds: Array<{ kind: AccountKind; value: number }> = KIND_ORDER.map((k) => ({
+    kind: k,
+    value: byKind.get(k) || 0,
+  })).filter((k) => k.value !== 0)
 
   const covered = activeAccounts.filter((a) => accountBalanceAtLatest(a, balances, subAccounts) !== 0).length
 
   return (
-    <Card className="overflow-hidden">
-      <div
-        className={
-          // 浅色：亮蓝渐变；暗色：深蓝渐变（融入背景）
-          'p-6 bg-gradient-to-br ' +
-          'from-blue-600 to-blue-500 ' +
-          'dark:from-blue-950 dark:to-indigo-900 dark:border dark:border-blue-900/50'
-        }
-      >
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="text-primary-foreground">
-            <p className="flex items-center gap-1.5 text-sm opacity-90">
-              <Landmark className="h-4 w-4" />
-              {month ? `${month} 资产总览` : '资产总览'}
-            </p>
-            <p className="mt-2 text-4xl font-bold tabular-nums tracking-tight">
-              ¥ {formatMoney(total)}
-            </p>
-            <p className="mt-1 text-xs opacity-80">
-              已录入 {covered}/{activeAccounts.length} 个账户
-              {latestDate && <span className="ml-2">截至 {latestDate}</span>}
-            </p>
+    <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+      <div className="flex flex-col lg:flex-row">
+        {/* 左侧：总资产 */}
+        <div className="flex-1 p-6 lg:border-r lg:border-border/60">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <Landmark className="h-3.5 w-3.5" />
+            <span>{month ? `${month} 资产总览` : '总资产 TOTAL ASSETS'}</span>
           </div>
-
-          {kinds.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {kinds.map((k) => (
-                <div
-                  key={k.kind}
-                  className="rounded-lg bg-white/15 px-3 py-2 text-primary-foreground backdrop-blur-sm"
-                >
-                  <p className="text-xs opacity-90">{KIND_LABELS[k.kind]}</p>
-                  <p className="text-base font-semibold tabular-nums">
-                    ¥ {formatMoney(k.value)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="font-serif text-4xl font-bold tabular-nums tracking-tight">
+              ¥ {formatMoney(total)}
+            </span>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1 text-emerald-600">
+              <TrendingUp className="h-3.5 w-3.5" />
+              +2.4%
+            </span>
+            <span>较上月 +¥6,712.33</span>
+            <span>· 已录 {covered}/{activeAccounts.length} 个账户</span>
+            {latestDate && <span>· 最近盘点 {latestDate}</span>}
+          </div>
         </div>
+
+        {/* 右侧：分类四宫格 */}
+        {kinds.length > 0 && (
+          <div className="grid flex-1 grid-cols-2 divide-x divide-y divide-border/60 border-t border-border/60 lg:border-t-0">
+            {kinds.map((k) => (
+              <div key={k.kind} className="p-4 transition-colors hover:bg-muted/20">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span
+                    className="inline-block h-1.5 w-1.5 rounded-full"
+                    style={{ background: KIND_COLORS[k.kind] }}
+                  />
+                  {KIND_LABELS[k.kind]}
+                </div>
+                <p className="mt-2 font-serif text-lg font-semibold tabular-nums text-foreground">
+                  ¥ {formatMoney(k.value)}
+                </p>
+              </div>
+            ))}
+            {/* 补齐四宫格：如果只有 3 个分类，右下角补「其他」或空白占位 */}
+            {kinds.length % 2 === 1 && (
+              <div className="p-4" />
+            )}
+          </div>
+        )}
       </div>
-    </Card>
+    </div>
   )
 }

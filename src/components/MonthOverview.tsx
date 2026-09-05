@@ -30,19 +30,19 @@ export default function MonthOverview({
   const monthLabel = `${year}年${parseInt(monthNum, 10)}月`
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <StatCards income={income} expense={expense} balance={balance} monthLabel={monthLabel} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">当月分类明细</h3>
+            <h3 className="font-serif text-sm font-semibold text-foreground/80">当月分类明细</h3>
             <Tabs value={chartType} onValueChange={(v) => setChartType(v as 'expense' | 'income')}>
-              <TabsList className="h-8">
-                <TabsTrigger value="expense" className="h-6 text-xs">
+              <TabsList className="h-8 rounded-xl bg-muted/60 p-1">
+                <TabsTrigger value="expense" className="h-6 rounded-lg text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/20">
                   支出
                 </TabsTrigger>
-                <TabsTrigger value="income" className="h-6 text-xs">
+                <TabsTrigger value="income" className="h-6 rounded-lg text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/20">
                   收入
                 </TabsTrigger>
               </TabsList>
@@ -51,8 +51,8 @@ export default function MonthOverview({
           <CategoryBarChart records={records} categories={categories} type={chartType} />
         </div>
 
-        <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-foreground">占比视图</h3>
+        <div className="space-y-3">
+          <h3 className="font-serif text-sm font-semibold text-foreground/80">占比视图</h3>
           <CategoryPieChart records={records} categories={categories} type={chartType} />
         </div>
       </div>

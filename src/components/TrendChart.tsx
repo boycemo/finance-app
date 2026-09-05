@@ -8,7 +8,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { formatMoney } from '@/lib/utils'
 import type { MonthStat } from '@/types'
 
@@ -38,12 +37,12 @@ export default function TrendChart({ data }: Props) {
   }))
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle>收支趋势</CardTitle>
-        <CardDescription>最近 12 个月的收入、支出和结余变化</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-shadow hover:shadow-md">
+      <div className="mb-3">
+        <h3 className="font-serif text-base font-semibold text-foreground/90">收支趋势</h3>
+        <p className="mt-0.5 text-xs text-muted-foreground/80">最近 12 个月的收入、支出和结余变化</p>
+      </div>
+      <div className="">
         {!hasData ? (
           <div className="flex h-[320px] flex-col items-center justify-center text-sm text-muted-foreground">
             <p>暂无趋势数据</p>
@@ -59,10 +58,12 @@ export default function TrendChart({ data }: Props) {
                 <Tooltip
                   formatter={(value: number) => `¥ ${formatMoney(value)}`}
                   contentStyle={{
-                    background: 'hsl(var(--popover))',
+                    background: 'hsl(var(--card))',
                     border: '1px solid hsl(var(--border))',
-                    borderRadius: 8,
-                    color: 'hsl(var(--popover-foreground))',
+                    borderRadius: 10,
+                    color: 'hsl(var(--foreground))',
+                    fontSize: 12,
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
                   }}
                 />
                 <Legend />
@@ -94,7 +95,7 @@ export default function TrendChart({ data }: Props) {
             </ResponsiveContainer>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

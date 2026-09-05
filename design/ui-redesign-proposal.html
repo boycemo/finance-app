@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>墨账 Ink Ledger · finance-app 全新界面设计方案</title>
+<style>
+/* ============================================================
+   墨账 Ink Ledger — Design System Tokens
+   ============================================================ */
+:root {
+  /* 纸面与墨色 */
+  --paper:      #F7F5F0;   /* 暖纸底 */
+  --paper-2:    #FCFBF8;   /* 卡片纸 */
+  --paper-3:    #EFEBE3;   /* 压凹区 */
+  --ink:        #1C2333;   /* 墨蓝黑 · 正文/标题 */
+  --ink-2:      #575E70;   /* 次级文字 */
+  --ink-3:      #9899A0;   /* 辅助文字/占位 */
+  --hairline:   #E2DDD2;   /* 账目细线 */
+  --hairline-2: #CFC9BA;   /* 强分隔线 */
+
+  /* 品牌色：靛青墨 */
+  --indigo:     #3E5FA8;
+  --indigo-hov: #324D8C;
+  --indigo-soft:#EAEEF7;
+  --indigo-ink: #2B3E6B;
+
+  /* 朱砂印章（品牌点缀 · 谨慎使用） */
+  --seal:       #C0422F;
+  --seal-soft:  #F8ECE9;
+
+  /* 流水语义色（延续产品既有约定） */
+  --income:     #1F7A57;   /* 青竹绿 · 收入 */
+  --income-soft:#E7F3ED;
+  --expense:    #D9472F;   /* 赭红 · 支出 */
+  --expense-soft:#F9ECE8;
+
+  /* 行情语义色（中国用户习惯：红涨绿跌） */
+  --up:         #C13B2A;
+  --up-soft:    #F8ECE9;
+  --down:       #1F7A57;
+  --down-soft:  #E7F3ED;
+
+  --radius:    10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 2px rgba(28,35,51,.05);
+  --shadow-md: 0 2px 6px rgba(28,35,51,.06), 0 12px 28px rgba(28,35,51,.07);
+  --focus-ring: 0 0 0 3px rgba(62,95,168,.22);
+
+  --font-display: 'Noto Serif SC','Songti SC','SimSun',Georgia,serif;
+  --font-body: 'Noto Sans SC','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+  --ease: cubic-bezier(.25, 1, .5, 1);
+}
+[data-theme="dark"] {
+  --paper:      #10141F;   /* 深墨夜 */
+  --paper-2:    #161C2B;
+  --paper-3:    #0C101A;
+  --ink:        #E9E6DD;   /* 米白墨色 */
+  --ink-2:      #A2A9B8;
+  --ink-3:      #6B7183;
+  --hairline:   #272E3F;
+  --hairline-2: #39415A;
+
+  --indigo:     #8099D9;
+  --indigo-hov: #93ABE4;
+  --indigo-soft:#1D2438;
+  --indigo-ink: #B8C8EE;
+
+  --seal:       #E0654F;
+  --seal-soft:  #33201C;
+
+  --income:     #4CBF95;
+  --income-soft:#14291F;
+  --expense:    #EC7359;
+  --expense-soft:#33201C;
+
+  --up:         #EC7359;
+  --up-soft:    #33201C;
+  --down:       #4CBF95;
+  --down-soft:  #14291F;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
+  --shadow-md: 0 2px 6px rgba(0,0,0,.35), 0 12px 28px rgba(0,0,0,.4);
+  --focus-ring: 0 0 0 3px rgba(128,153,217,.3);
+}
+
+/* ============================================================
+   基础
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  transition: background .3s var(--ease), color .3s var(--ease);
+}
+.num { font-variant-numeric: tabular-nums; }
+.doc { max-width: 1180px; margin: 0 auto; padding: 0 32px 120px; }
+
+/* 顶部文档条 */
+.docbar {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--hairline);
+}
+.docbar-in { max-width: 1180px; margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; gap: 16px; }
+.docbar .title { font-family: var(--font-display); font-size: 17px; font-weight: 700; }
+.docbar .sub { color: var(--ink-2); font-size: 13px; }
+.docbar .spacer { flex: 1; }
+
+/* 印章 Logo */
+.seal-mark {
+  width: 34px; height: 34px; border-radius: 6px;
+  background: var(--seal); color: #FBF7F2;
+  font-family: var(--font-display); font-size: 19px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-sm);
+  flex: none;
+}
+
+/* 章节标题：账本式 · 标题下双线 */
+section { margin-top: 72px; }
+.sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+.sec-no { font-family: var(--font-display); font-size: 13px; color: var(--seal); letter-spacing: .12em; }
+.sec-title { font-family: var(--font-display); font-size: 27px; font-weight: 700; letter-spacing: .02em; }
+.sec-rule { border: none; border-top: 1px solid var(--hairline-2); margin: 10px 0 6px; position: relative; }
+.sec-rule::after {
+  content: ''; position: absolute; left: 0; right: 0; top: 2px;
+  border-top: 1px solid var(--hairline);
+}
+.sec-desc { color: var(--ink-2); max-width: 760px; margin-bottom: 28px; }
+
+/* ============================================================
+   组件原语
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  font-family: var(--font-body); font-size: 14px; font-weight: 500;
+  border-radius: var(--radius); border: 1px solid transparent;
+  padding: 8px 16px; cursor: pointer; user-select: none;
+  transition: all .15s var(--ease); text-decoration: none; line-height: 1.4;
+}
+.btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.btn-primary { background: var(--indigo); color: #fff; }
+.btn-primary:hover { background: var(--indigo-hov); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-secondary { background: var(--paper-2); color: var(--ink); border-color: var(--hairline-2); box-shadow: var(--shadow-sm); }
+.btn-secondary:hover { border-color: var(--indigo); color: var(--indigo); }
+.btn-ghost { background: transparent; color: var(--ink-2); }
+.btn-ghost:hover { background: var(--indigo-soft); color: var(--indigo); }
+.btn-danger { background: transparent; color: var(--seal); border-color: color-mix(in srgb, var(--seal) 40%, transparent); }
+.btn-danger:hover { background: var(--seal-soft); }
+.btn-sm { padding: 5px 12px; font-size: 13px; }
+.btn-lg { padding: 11px 22px; font-size: 15px; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 500; line-height: 1;
+  padding: 4px 9px; border-radius: 5px; white-space: nowrap;
+}
+.badge-cash    { background: var(--indigo-soft); color: var(--indigo-ink); }
+.badge-invest  { background: var(--up-soft); color: var(--up); }
+.badge-fund    { background: var(--income-soft); color: var(--income); }
+.badge-other   { background: color-mix(in srgb, var(--ink-3) 14%, transparent); color: var(--ink-2); }
+.badge-income  { background: var(--income-soft); color: var(--income); }
+.badge-expense { background: var(--expense-soft); color: var(--expense); }
+
+.card {
+  background: var(--paper-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.card-pad { padding: 22px 24px; }
+
+/* 输入 */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; color: var(--ink-2); }
+.input {
+  font-family: var(--font-body); font-size: 14px; color: var(--ink);
+  background: var(--paper-2); border: 1px solid var(--hairline-2);
+  border-radius: var(--radius); padding: 9px 12px; width: 100%;
+  transition: border-color .15s var(--ease), box-shadow .15s var(--ease);
+}
+.input::placeholder { color: var(--ink-3); }
+.input:focus { outline: none; border-color: var(--indigo); box-shadow: var(--focus-ring); }
+.input-error { border-color: var(--expense); }
+.field-error { font-size: 12px; color: var(--expense); }
+
+/* 分段控件（收入/支出） */
+.seg { display: inline-flex; background: var(--paper-3); border: 1px solid var(--hairline); border-radius: var(--radius); padding: 3px; gap: 2px; }
+.seg button {
+  font-family: var(--font-body); font-size: 13px; font-weight: 500;
+  border: none; background: transparent; color: var(--ink-2);
+  padding: 6px 16px; border-radius: 7px; cursor: pointer;
+  transition: all .15s var(--ease);
+}
+.seg button.on { background: var(--paper-2); color: var(--ink); box-shadow: var(--shadow-sm); }
+.seg button.on.income { color: var(--income); }
+.seg button.on.expense { color: var(--expense); }
+
+/* ============================================================
+   Token 展示
+   ============================================================ */
+.tok-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.tok { border: 1px solid var(--hairline); border-radius: var(--radius); overflow: hidden; background: var(--paper-2); }
+.tok .swatch { height: 56px; }
+.tok .meta { padding: 9px 11px; }
+.tok .name { font-size: 12.5px; font-weight: 600; }
+.tok .val { font-size: 11.5px; color: var(--ink-3); font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; }
+.tok .use { font-size: 11.5px; color: var(--ink-2); margin-top: 2px; }
+
+.type-sample { background: var(--paper-2); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: 28px 30px; }
+.type-row { display: flex; align-items: baseline; gap: 22px; padding: 13px 0; border-bottom: 1px solid var(--hairline); flex-wrap: wrap; }
+.type-row:last-child { border-bottom: none; }
+.type-label { width: 150px; flex: none; font-size: 12px; color: var(--ink-3); font-family: ui-monospace, Consolas, monospace; }
+.d1 { font-family: var(--font-display); font-size: 40px; font-weight: 700; letter-spacing: .01em; }
+.d2 { font-family: var(--font-display); font-size: 27px; font-weight: 700; }
+.d3 { font-family: var(--font-display); font-size: 21px; font-weight: 600; }
+.b1 { font-size: 15px; }
+.b2 { font-size: 13px; color: var(--ink-2); }
+.b3 { font-size: 12px; color: var(--ink-3); }
+.n1 { font-family: var(--font-display); font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   高保真模型（浏览器框架）
+   ============================================================ */
+.frame {
+  border-radius: 12px; overflow: hidden;
+  border: 1px solid var(--hairline-2);
+  box-shadow: var(--shadow-md);
+  background: var(--paper);
+}
+.chrome { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--paper-3); border-bottom: 1px solid var(--hairline); }
+.chrome .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--hairline-2); }
+.chrome .url {
+  flex: 1; max-width: 340px; margin: 0 auto; font-size: 11.5px; color: var(--ink-3);
+  background: var(--paper-2); border: 1px solid var(--hairline); border-radius: 6px; padding: 3px 12px; text-align: center;
+}
+
+/* 应用布局 */
+.app { display: grid; grid-template-columns: 216px 1fr; min-height: 640px; }
+.side {
+  border-right: 1px solid var(--hairline); padding: 20px 14px;
+  display: flex; flex-direction: column; gap: 4px; background: var(--paper-2);
+}
+.side .brand { display: flex; align-items: center; gap: 10px; padding: 2px 8px 18px; }
+.side .brand .name { font-family: var(--font-display); font-size: 17px; font-weight: 700; }
+.side .brand .en { font-size: 10px; color: var(--ink-3); letter-spacing: .18em; display: block; margin-top: -2px; }
+.nav-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 12px; border-radius: var(--radius);
+  color: var(--ink-2); font-size: 14px; font-weight: 500; cursor: pointer;
+  transition: all .15s var(--ease);
+}
+.nav-item svg { width: 17px; height: 17px; flex: none; }
+.nav-item:hover { background: var(--indigo-soft); color: var(--indigo); }
+.nav-item.active { background: var(--indigo); color: #fff; box-shadow: var(--shadow-sm); }
+.nav-item .desc { display: block; font-size: 11px; font-weight: 400; opacity: .75; margin-top: 1px; }
+.side .foot { margin-top: auto; padding: 12px 12px 2px; border-top: 1px solid var(--hairline); }
+.status { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-2); }
+.status .led { width: 7px; height: 7px; border-radius: 50%; background: var(--income); box-shadow: 0 0 0 3px var(--income-soft); }
+
+.main { padding: 26px 30px 34px; }
+.page-head { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
+.page-title { font-family: var(--font-display); font-size: 23px; font-weight: 700; }
+.page-title .date { color: var(--ink-2); font-size: 15px; font-weight: 400; margin-left: 6px; }
+.page-head .spacer { flex: 1; }
+
+/* 英雄总资产 */
+.hero {
+  display: grid; grid-template-columns: 1.35fr 1fr; gap: 0;
+  background: var(--paper-2); border: 1px solid var(--hairline); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm); overflow: hidden;
+}
+.hero-l { padding: 26px 30px; border-right: 1px solid var(--hairline); }
+.hero-label { font-size: 12px; letter-spacing: .22em; color: var(--ink-3); }
+.hero-amount { font-family: var(--font-display); font-weight: 700; font-size: 46px; line-height: 1.15; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.hero-amount .cur { font-size: 22px; margin-right: 4px; color: var(--ink-2); font-weight: 600; }
+.hero-amount .dec { font-size: 26px; color: var(--ink-2); }
+.hero-delta { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 13px; }
+.delta-up { color: var(--up); background: var(--up-soft); border-radius: 5px; padding: 3px 8px; font-weight: 600; }
+.delta-note { color: var(--ink-3); }
+.hero-r { display: grid; grid-template-columns: 1fr 1fr; }
+.hero-cell { padding: 17px 22px; border-bottom: 1px solid var(--hairline); }
+.hero-cell:nth-child(odd) { border-right: 1px solid var(--hairline); }
+.hero-cell:nth-child(3), .hero-cell:nth-child(4) { border-bottom: none; }
+.hero-cell .k { font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+.hero-cell .k .sq { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.hero-cell .v { font-family: var(--font-display); font-size: 19px; font-weight: 700; margin-top: 3px; font-variant-numeric: tabular-nums; }
+
+/* 账本行（Ledger Row） */
+.ledger { border: 1px solid var(--hairline); border-radius: var(--radius-lg); background: var(--paper-2); box-shadow: var(--shadow-sm); overflow: hidden; }
+.ledger-head { display: flex; align-items: center; padding: 15px 22px; border-bottom: 1px solid var(--hairline-2); gap: 10px; }
+.ledger-head .t { font-family: var(--font-display); font-size: 16px; font-weight: 700; }
+.ledger-head .hint { font-size: 12px; color: var(--ink-3); }
+.ledger-head .spacer { flex: 1; }
+.lrow {
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  padding: 11px 22px; border-bottom: 1px solid var(--hairline);
+  transition: background .15s var(--ease); cursor: pointer;
+}
+.lrow:hover { background: var(--indigo-soft); }
+.lrow.sub { padding-left: 44px; padding-top: 8px; padding-bottom: 8px; }
+.lrow.sub .name { font-size: 13.5px; color: var(--ink-2); }
+.lrow .name { display: flex; align-items: center; gap: 10px; font-size: 14.5px; font-weight: 500; }
+.lrow .name .chev { color: var(--ink-3); font-size: 11px; }
+.lrow .name .tag { font-size: 11px; color: var(--ink-3); }
+.lrow .amt { font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 600; text-align: right; }
+.lrow .amt .cell-delta { display: block; font-size: 11.5px; font-weight: 500; margin-top: 1px; }
+.lrow.total { background: var(--paper-3); border-bottom: none; }
+.lrow.total .name { font-family: var(--font-display); font-weight: 700; }
+.lrow.total .amt { font-family: var(--font-display); font-size: 17px; font-weight: 700; border-bottom: 3px double var(--ink); padding-bottom: 2px; }
+
+/* 趋势图卡片 */
+.chart-card { background: var(--paper-2); border: 1px solid var(--hairline); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.chart-card .head { display: flex; align-items: center; gap: 10px; padding: 15px 20px 4px; }
+.chart-card .head .t { font-family: var(--font-display); font-size: 15px; font-weight: 700; }
+.chart-card .head .spacer { flex: 1; }
+.pills { display: inline-flex; gap: 2px; background: var(--paper-3); border-radius: 8px; padding: 3px; }
+.pill { font-size: 12px; padding: 4px 12px; border-radius: 6px; cursor: pointer; color: var(--ink-2); border: none; background: transparent; }
+.pill.on { background: var(--paper-2); color: var(--ink); box-shadow: var(--shadow-sm); font-weight: 600; }
+.legend { display: flex; gap: 16px; font-size: 12px; color: var(--ink-2); padding: 6px 20px 2px; }
+.legend .li { display: flex; align-items: center; gap: 6px; }
+.legend .li .ln { width: 16px; height: 2.5px; border-radius: 2px; }
+svg.chart { width: 100%; height: auto; display: block; }
+.chart-wrap { padding: 6px 14px 14px; }
+
+/* 报表迷你矩阵 */
+.matrix { width: 100%; border-collapse: collapse; font-size: 13px; }
+.matrix th { font-size: 11.5px; color: var(--ink-3); font-weight: 500; text-align: right; padding: 8px 14px; border-bottom: 1px solid var(--hairline-2); }
+.matrix th:first-child { text-align: left; }
+.matrix td { padding: 9px 14px; border-bottom: 1px solid var(--hairline); text-align: right; font-variant-numeric: tabular-nums; }
+.matrix td:first-child { text-align: left; color: var(--ink-2); }
+.matrix tr:last-child td { border-bottom: none; }
+.matrix .chg { font-weight: 600; }
+
+/* 统计卡（收支） */
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.stat { background: var(--paper-2); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: 18px 22px; box-shadow: var(--shadow-sm); position: relative; overflow: hidden; }
+.stat .k { font-size: 13px; color: var(--ink-2); display: flex; align-items: center; gap: 8px; }
+.stat .v { font-family: var(--font-display); font-size: 30px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.stat .v .cur { font-size: 16px; color: var(--ink-2); font-weight: 600; margin-right: 2px; }
+.stat .spark { position: absolute; right: 14px; top: 16px; opacity: .85; }
+.stat.v-expense .v { color: var(--expense); }
+.stat.v-income .v { color: var(--income); }
+.stat .foot { font-size: 12px; color: var(--ink-3); margin-top: 6px; }
+
+/* 分类条形 */
+.catrow { display: grid; grid-template-columns: 58px 1fr auto; align-items: center; gap: 12px; padding: 8px 0; }
+.catrow .cat { font-size: 13px; color: var(--ink-2); }
+.catrow .bar-bg { height: 10px; background: var(--paper-3); border-radius: 5px; overflow: hidden; }
+.catrow .bar { height: 100%; border-radius: 5px; background: var(--indigo); opacity: .85; }
+.catrow .val { font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 600; min-width: 72px; text-align: right; }
+
+/* 明细流水 */
+.flow-row { display: grid; grid-template-columns: 64px 92px 1fr auto auto; align-items: center; gap: 12px; padding: 11px 22px; border-bottom: 1px solid var(--hairline); transition: background .15s var(--ease); }
+.flow-row:hover { background: var(--indigo-soft); }
+.flow-row .day { font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.flow-row .memo { font-size: 14px; }
+.flow-row .memo .sub { font-size: 12px; color: var(--ink-3); }
+.flow-row .amt { font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 600; min-width: 96px; text-align: right; }
+.amt.in { color: var(--income); }
+.amt.out { color: var(--ink); }
+.flow-row .acts { display: flex; gap: 4px; opacity: 0; transition: opacity .15s var(--ease); }
+.flow-row:hover .acts { opacity: 1; }
+.icon-btn { width: 26px; height: 26px; border-radius: 6px; border: none; background: transparent; color: var(--ink-3); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.icon-btn:hover { background: var(--paper-3); color: var(--indigo); }
+
+/* 记一笔面板 */
+.entry { display: grid; grid-template-columns: 96px 1fr; gap: 14px; align-items: center; }
+.amount-input { display: flex; align-items: baseline; gap: 8px; background: var(--paper-3); border: 1px solid var(--hairline); border-radius: var(--radius); padding: 12px 16px; transition: all .15s var(--ease); }
+.amount-input:focus-within { border-color: var(--indigo); box-shadow: var(--focus-ring); background: var(--paper-2); }
+.amount-input .cur { font-size: 16px; color: var(--ink-2); font-weight: 600; }
+.amount-input input { border: none; outline: none; background: transparent; font-family: var(--font-display); font-size: 26px; font-weight: 700; width: 100%; color: var(--ink); font-variant-numeric: tabular-nums; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { font-size: 13px; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--hairline-2); background: var(--paper-2); color: var(--ink-2); cursor: pointer; transition: all .15s var(--ease); }
+.chip:hover { border-color: var(--indigo); color: var(--indigo); }
+.chip.on { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+
+/* 布局工具 */
+.grid-2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; }
+.grid-2b { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.mt { margin-top: 16px; }
+.mt-lg { margin-top: 24px; }
+
+/* 文档内容块 */
+.pillars { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.pillar { background: var(--paper-2); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: 22px 24px; box-shadow: var(--shadow-sm); }
+.pillar .no { font-family: var(--font-display); font-size: 13px; color: var(--seal); letter-spacing: .1em; }
+.pillar h3 { font-family: var(--font-display); font-size: 18px; margin: 6px 0 8px; }
+.pillar p { font-size: 13.5px; color: var(--ink-2); }
+.pillar .demo { margin-top: 14px; }
+
+.callout { border-left: 3px solid var(--seal); background: var(--seal-soft); border-radius: 0 10px 10px 0; padding: 14px 18px; font-size: 13.5px; color: var(--ink); margin-top: 18px; }
+.callout b { color: var(--seal); }
+
+table.spec { width: 100%; border-collapse: collapse; font-size: 13.5px; background: var(--paper-2); border: 1px solid var(--hairline); border-radius: var(--radius-lg); overflow: hidden; }
+table.spec th { text-align: left; font-size: 12px; color: var(--ink-3); font-weight: 600; padding: 10px 16px; border-bottom: 1px solid var(--hairline-2); background: var(--paper-3); }
+table.spec td { padding: 10px 16px; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+table.spec tr:last-child td { border-bottom: none; }
+table.spec code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; background: var(--paper-3); padding: 2px 6px; border-radius: 4px; }
+
+/* 主题切换按钮 */
+.theme-toggle { display: inline-flex; align-items: center; gap: 8px; }
+.toggle-track { width: 46px; height: 25px; border-radius: 999px; background: var(--paper-3); border: 1px solid var(--hairline-2); position: relative; cursor: pointer; transition: all .2s var(--ease); }
+.toggle-track::after { content: ''; position: absolute; top: 2.5px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--indigo); transition: transform .25s var(--ease); }
+[data-theme="dark"] .toggle-track::after { transform: translateX(21px); background: var(--seal); }
+.toggle-label { font-size: 12.5px; color: var(--ink-2); min-width: 58px; }
+
+/* 尺寸/间距展示 */
+.scale-row { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
+.scale-box { background: var(--indigo-soft); border: 1px solid var(--indigo); border-radius: 4px; }
+
+.hero-banner {
+  margin-top: 48px; padding: 52px 48px; border-radius: 18px;
+  background: var(--paper-2); border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-md); position: relative; overflow: hidden;
+}
+.hero-banner::before {
+  content: '墨賬'; position: absolute; right: 28px; bottom: -34px;
+  font-family: var(--font-display); font-size: 190px; font-weight: 700;
+  color: var(--indigo); opacity: .06; line-height: 1; pointer-events: none;
+}
+.hero-banner .kicker { font-size: 12px; letter-spacing: .3em; color: var(--seal); font-weight: 600; }
+.hero-banner h1 { font-family: var(--font-display); font-size: 40px; font-weight: 700; margin: 10px 0 12px; letter-spacing: .02em; }
+.hero-banner p { max-width: 620px; color: var(--ink-2); font-size: 15px; }
+.hero-banner .tags { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+.hero-banner .tag { font-size: 12.5px; padding: 5px 13px; border-radius: 999px; border: 1px solid var(--hairline-2); color: var(--ink-2); background: var(--paper); }
+
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero-l { border-right: none; border-bottom: 1px solid var(--hairline); }
+  .grid-2, .grid-2b, .pillars, .stat-grid { grid-template-columns: 1fr; }
+  .app { grid-template-columns: 1fr; }
+  .side { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ 文档条 ═══════════ -->
+<div class="docbar">
+  <div class="docbar-in">
+    <span class="seal-mark">墨</span>
+    <div>
+      <div class="title">墨账 Ink Ledger · 界面设计方案</div>
+      <div class="sub">finance-app 全新视觉与交互规范 v1.0 · 2026-09</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="theme-toggle">
+      <span class="toggle-label num" id="themeLabel">亮色 · 纸</span>
+      <div class="toggle-track" id="themeToggle" role="switch" aria-checked="false" tabindex="0" aria-label="切换明暗主题"></div>
+    </div>
+  </div>
+</div>
+
+<div class="doc">
+
+<!-- ═══════════ 主张 ═══════════ -->
+<div class="hero-banner">
+  <div class="kicker">DESIGN PROPOSAL · 个人记账与资产工作台</div>
+  <h1>把数字，记进一本值得信任的账。</h1>
+  <p>「墨账」以私人账本为隐喻：暖纸底色与靛青墨色构成安静的书页，衬线标题与等宽数字赋予账目以仪式感，朱砂印章只在该出现的地方出现。信息密度服务于桌面端高效复盘，明暗双主题各成一体。</p>
+  <div class="tags">
+    <span class="tag">精致账本质感</span>
+    <span class="tag">桌面优先</span>
+    <span class="tag">明暗双主题</span>
+    <span class="tag">WCAG AA</span>
+    <span class="tag">Tailwind / shadcn 兼容</span>
+  </div>
+</div>
+
+<!-- ═══════════ 01 设计原则 ═══════════ -->
+<section id="principles">
+  <div class="sec-head"><span class="sec-no">壹</span><span class="sec-title">设计原则</span></div>
+  <hr class="sec-rule">
+  <p class="sec-desc">四条原则约束所有界面决策，任何新组件先对照这四条再动手。</p>
+  <div class="pillars">
+    <div class="pillar">
+      <div class="no">原则 01</div>
+      <h3>数字是第一公民</h3>
+      <p>金额一律等宽数字（tabular-nums）右对齐；层级靠字重与字号区分而非颜色堆叠；合计使用账本式双下划线，读数零歧义。</p>
+      <div class="demo">
+        <span class="lrow total" style="display:inline-grid;padding:0">
+          <span class="name">本月合计</span>
+          <span class="amt num">¥6,842.50</span>
+        </span>
+      </div>
+    </div>
+    <div class="pillar">
+      <div class="no">原则 02</div>
+      <h3>一条线，胜过一张卡</h3>
+      <p>账目列表用发丝线（hairline）分隔而非卡片套卡片——密度更高、扫读更快，也更像账本。卡片只用于真正独立的信息块（总览、图表、表单）。</p>
+    </div>
+    <div class="pillar">
+      <div class="no">原则 03</div>
+      <h3>朱砂惜墨如金</h3>
+      <p>印章红是品牌记忆点，但只用在三处：Logo 印章、破坏性/警示操作、以及行情上涨。满页皆红，红就失去了意义。</p>
+      <div class="demo" style="display:flex;gap:10px;align-items:center">
+        <span class="seal-mark" style="width:28px;height:28px;font-size:15px">墨</span>
+        <span class="badge" style="background:var(--up-soft);color:var(--up)">▲ +2.4%</span>
+        <button class="btn btn-danger btn-sm">删除账户</button>
+      </div>
+    </div>
+    <div class="pillar">
+      <div class="no">原则 04</div>
+      <h3>键盘与右手优先</h3>
+      <p>桌面端高频动作（记一笔、批量录入）永远在右上角拇指热区；Enter 提交、Esc 关闭、Tab 顺序即视觉顺序；焦点环 2px 靛青 + 2px 偏移，可见但不刺眼。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 02 设计基石 ═══════════ -->
+<section id="tokens">
+  <div class="sec-head"><span class="sec-no">贰</span><span class="sec-title">设计基石 · 色彩</span></div>
+  <hr class="sec-rule">
+  <p class="sec-desc">配色延续产品既有 token 结构（HSL CSS 变量 → Tailwind），只精修数值。切换右上角主题开关可同时预览两套色板的实际观感。</p>
+
+  <h3 style="font-family:var(--font-display);font-size:16px;margin:6px 0 12px">纸面与墨色 · 中性系统</h3>
+  <div class="tok-grid">
+    <div class="tok"><div class="swatch" style="background:var(--paper)"></div><div class="meta"><div class="name">纸 · Paper</div><div class="val">#F7F5F0 / #10141F</div><div class="use">页面底色</div></div></div>
+    <div class="tok"><div class="swatch" style="background:var(--paper-2)"></div><div class="meta"><div class="name">卡纸 · Paper-2</div><div class="val">#FCFBF8 / #161C2B</div><div class="use">卡片/表面</div></div></div>
+    <div class="tok"><div class="swatch" style="background:var(--paper-3)"></div><div class="meta"><div class="name">压凹 · Paper-3</div><div class="val">#EFEBE3 / #0C101A</div><div class="use">分段控件/输入底</div></div></div>
+    <div class="tok"><div class="swatch" style="background:var(--ink)"></div><div class="meta"><div class="name">墨 · Ink</div><div class="val">#1C2333 / #E9E6DD</div><div class="use">正文与标题</div></div></div>
+    <div class="tok"><div class="swatch" style="background:var(--ink-2)"></div><div class="meta"><div class="name">淡墨 · Ink-2</div><div class="val">#575E70 / #A2A9B8</div><div class="use">次级文字</div></div></div>
+    <div class="tok"><div class="swatch" style="background:var(--hairline-2)"></div><div class="meta"><div class="name">账线 · Hairline</div><div class="val">#E2DDD2 / #272E3F</div><div class="use">账目分隔线</div></div></div>
+  </div>
+
+  <h3 style="font-family:var(--font-display);font-size:16px;margin:24px 0 12px">品牌与语义色</h3>
+  <div class="tok-grid">
+    <div class="tok"><div class="swatch" style="background:var(--indigo)"></div><div class="meta"><div class="name">靛青 · Primary</div><div class="val">#3E5FA8 / #8099D9</div><div class="use">主操作/选中/链接</div></div></div>
+    <div class="tok"><div class="swatch" style="background:var(--seal)"></div><div class="meta"><div class="name">朱砂 · Seal</div><div class="val">#C0422F / #E0654F</div><div class="use">品牌印章/警示</div></div></div>
+    <div class="tok"><div class="swatch" style="background:var(--income)"></div><div class="meta"><div class="name">青竹 · Income</div><div class="val">#1F7A57 / #4CBF95</div><div class="use">收入（流水语义）</div></div></div>
+    <div class="tok"><div class="swatch" style="background:var(--expense)"></div><div class="meta"><div class="name">赭红 · Expense</div><div class="val">#D9472F / #EC7359</div><div class="use">支出（流水语义）</div></div></div>
+    <div class="tok"><div class="swatch" style="background:var(--up)"></div><div class="meta"><div class="name">涨 · Up</div><div class="val">#C13B2A / #EC7359</div><div class="use">行情上涨 ▲（红涨）</div></div></div>
+    <div class="tok"><div class="swatch" style="background:var(--down)"></div><div class="meta"><div class="name">跌 · Down</div><div class="val">#1F7A57 / #4CBF95</div><div class="use">行情下跌 ▼（绿跌）</div></div></div>
+  </div>
+
+  <div class="callout">
+    <b>双语义色约定（重要）</b>：流水场景（记一笔、明细列表）沿用产品既有「收入=青竹绿、支出=赭红」；资产行情场景（总资产环比、余额月报环比）遵循中国用户习惯「<b style="color:var(--up)">红涨</b> <b style="color:var(--down)">绿跌</b>」。两套规则在图例处始终显式标注，不靠猜。
+  </div>
+
+  <h3 style="font-family:var(--font-display);font-size:16px;margin:30px 0 12px">字体排版 · Typography</h3>
+  <p class="sec-desc" style="margin-bottom:14px">展示层用衬线（Noto Serif SC / 宋体系）营造账本质感；正文用系统无衬线保证可读性；所有数字启用等宽数字特性。零网络字体依赖，本地应用即刻可用。</p>
+  <div class="type-sample">
+    <div class="type-row"><span class="type-label">display / 40 · 衬线 700</span><span class="d1">贰拾捌萬陆仟肆佰叁拾贰</span></div>
+    <div class="type-row"><span class="type-label">hero-num / 46 · 衬线 700 等宽</span><span class="n1 num">¥286,432.18</span></div>
+    <div class="type-row"><span class="type-label">h2 / 27 · 衬线 700</span><span class="d2">资产总览</span></div>
+    <div class="type-row"><span class="type-label">h3 / 21 · 衬线 600</span><span class="d3">月度收支趋势</span></div>
+    <div class="type-row"><span class="type-label">body / 15 · 无衬线 400</span><span class="b1">记一笔：收入 / 支出切换，金额、日期、分类、备注，十秒内完成。</span></div>
+    <div class="type-row"><span class="type-label">body-2 / 13 · 无衬线 400</span><span class="b2">账户余额 = 其启用小项目的余额合计，未启用小项目的账户直接记余额。</span></div>
+    <div class="type-row"><span class="type-label">caption / 12 · 无衬线 400</span><span class="b3">数据存于本地 SQLite，浏览器清缓存不受影响。</span></div>
+  </div>
+
+  <h3 style="font-family:var(--font-display);font-size:16px;margin:30px 0 12px">间距 · 圆角 · 阴影</h3>
+  <div class="card card-pad" style="display:flex;gap:38px;flex-wrap:wrap;align-items:flex-end">
+    <div>
+      <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px">4pt 网格间距阶</div>
+      <div class="scale-row">
+        <div><div class="scale-box" style="width:8px;height:8px"></div><div class="b3 num" style="text-align:center">4</div></div>
+        <div><div class="scale-box" style="width:12px;height:12px"></div><div class="b3 num" style="text-align:center">8</div></div>
+        <div><div class="scale-box" style="width:16px;height:16px"></div><div class="b3 num" style="text-align:center">12</div></div>
+        <div><div class="scale-box" style="width:20px;height:20px"></div><div class="b3 num" style="text-align:center">16</div></div>
+        <div><div class="scale-box" style="width:28px;height:28px"></div><div class="b3 num" style="text-align:center">24</div></div>
+        <div><div class="scale-box" style="width:36px;height:36px"></div><div class="b3 num" style="text-align:center">32</div></div>
+        <div><div class="scale-box" style="width:52px;height:52px"></div><div class="b3 num" style="text-align:center">48</div></div>
+      </div>
+    </div>
+    <div style="min-width:200px">
+      <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px">圆角阶</div>
+      <div style="display:flex;gap:12px;align-items:flex-end">
+        <div style="width:44px;height:44px;background:var(--indigo-soft);border:1px solid var(--indigo);border-radius:6px"></div>
+        <div style="width:44px;height:44px;background:var(--indigo-soft);border:1px solid var(--indigo);border-radius:10px"></div>
+        <div style="width:44px;height:44px;background:var(--indigo-soft);border:1px solid var(--indigo);border-radius:14px"></div>
+        <div style="width:44px;height:44px;background:var(--indigo-soft);border:1px solid var(--indigo);border-radius:999px"></div>
+      </div>
+    </div>
+    <div style="min-width:220px">
+      <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px">阴影（低海拔，纸面感）</div>
+      <div style="display:flex;gap:14px">
+        <div style="width:56px;height:40px;background:var(--paper-2);border-radius:8px;box-shadow:var(--shadow-sm)"></div>
+        <div style="width:56px;height:40px;background:var(--paper-2);border-radius:8px;box-shadow:var(--shadow-md)"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 03 组件规范 ═══════════ -->
+<section id="components">
+  <div class="sec-head"><span class="sec-no">叁</span><span class="sec-title">组件规范</span></div>
+  <hr class="sec-rule">
+  <p class="sec-desc">基于现有 shadcn/ui 组件升级视觉，API 不变、只调 token 与状态样式，改造成本最低。</p>
+
+  <div class="grid-2b">
+    <div class="card card-pad">
+      <div style="font-size:12px;color:var(--ink-3);margin-bottom:14px">按钮 · 四种变体 × 状态</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-primary">记一笔</button>
+        <button class="btn btn-secondary">参照上月补全</button>
+        <button class="btn btn-ghost">展开</button>
+        <button class="btn btn-danger">删除</button>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px">
+        <button class="btn btn-primary btn-sm">保存</button>
+        <button class="btn btn-secondary btn-sm">取消</button>
+        <button class="btn btn-primary" disabled style="opacity:.55;cursor:not-allowed">保存中…</button>
+        <button class="btn btn-primary" style="box-shadow:var(--focus-ring)">聚焦态</button>
+      </div>
+    </div>
+    <div class="card card-pad">
+      <div style="font-size:12px;color:var(--ink-3);margin-bottom:14px">表单 · 输入 / 错误 / 金额</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap">
+        <div class="field" style="flex:1;min-width:150px">
+          <label>备注</label>
+          <input class="input" placeholder="午饭 · 楼下食堂">
+        </div>
+        <div class="field" style="flex:1;min-width:150px">
+          <label>日期</label>
+          <input class="input num" value="2026-09-05">
+        </div>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>金额（错误态示例）</label>
+        <input class="input input-error num" value="12.3.4">
+        <span class="field-error">金额格式不正确，最多两位小数</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2b mt">
+    <div class="card card-pad">
+      <div style="font-size:12px;color:var(--ink-3);margin-bottom:14px">徽章 · 账户类型 / 收支</div>
+      <div style="display:flex;gap:9px;flex-wrap:wrap">
+        <span class="badge badge-cash">货币资金</span>
+        <span class="badge badge-invest">投资账户</span>
+        <span class="badge badge-fund">基金理财</span>
+        <span class="badge badge-other">其他</span>
+        <span class="badge badge-income">收入 +18,200.00</span>
+        <span class="badge badge-expense">支出 −6,842.50</span>
+      </div>
+      <div style="font-size:12px;color:var(--ink-3);margin:18px 0 14px">分段控件 · 记一笔核心切换</div>
+      <div class="seg">
+        <button class="on expense">支出</button>
+        <button class="income">收入</button>
+      </div>
+    </div>
+    <div class="card card-pad">
+      <div style="font-size:12px;color:var(--ink-3);margin-bottom:14px">反馈 · Toast（保存成功后 2.4s 自动消失）</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="card card-pad" style="display:flex;align-items:center;gap:10px;padding:12px 18px;box-shadow:var(--shadow-md)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="var(--income)"/><path d="M4.5 8.2l2.3 2.3 4.7-5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span style="font-size:13.5px">已记一笔：餐饮 −32.00</span>
+        </div>
+        <div class="card card-pad" style="display:flex;align-items:center;gap:10px;padding:12px 18px;box-shadow:var(--shadow-md);border-color:color-mix(in srgb,var(--seal) 45%,transparent)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="var(--seal)"/><path d="M8 4.5v4M8 11.2v.1" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span style="font-size:13.5px">删除失败：后端未连接</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 04 界面 A：账户余额 ═══════════ -->
+<section id="screen-assets">
+  <div class="sec-head"><span class="sec-no">肆</span><span class="sec-title">界面方案 A · 账户余额工作台</span></div>
+  <hr class="sec-rule">
+  <p class="sec-desc">回答「我现在有多少钱、都在哪」。左栏账本式账户列表（悬停预览、点击展开小项目），右侧趋势与月报；高频的「批量录入」固定在右上热区。总资产数字采用衬线等宽 + 环比红涨绿跌。</p>
+
+  <div class="frame">
+    <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">127.0.0.1:5173 · #/assets</span></div>
+    <div class="app">
+      <!-- 侧栏 -->
+      <aside class="side">
+        <div class="brand">
+          <span class="seal-mark">墨</span>
+          <div><span class="name">墨账</span><span class="en">INK LEDGER</span></div>
+        </div>
+        <div class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 10h18M5 10V7a2 2 0 012-2h10a2 2 0 012 2v3M4 10v9M20 10v9M4 19h16M8 13v3M12 13v3M16 13v3"/></svg>
+          <div>账户余额<span class="desc">资产 · 账户 · 报表</span></div>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+          <div>收支记账<span class="desc">流水 · 分类 · 趋势</span></div>
+        </div>
+        <div class="foot">
+          <div class="status"><span class="led"></span>后端已连接 · SQLite</div>
+        </div>
+      </aside>
+
+      <!-- 主区 -->
+      <div class="main">
+        <div class="page-head">
+          <div class="page-title">资产总览<span class="date num">2026 年 9 月</span></div>
+          <div class="spacer"></div>
+          <button class="btn btn-secondary btn-sm">参照上月补全</button>
+          <button class="btn btn-secondary btn-sm">导出备份</button>
+          <button class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 2v10M2 7h10"/></svg>
+            批量录入余额
+          </button>
+        </div>
+
+        <!-- 英雄总资产 -->
+        <div class="hero">
+          <div class="hero-l">
+            <div class="hero-label">总资产 TOTAL ASSETS</div>
+            <div class="hero-amount num"><span class="cur">¥</span>286,432<span class="dec">.18</span></div>
+            <div class="hero-delta">
+              <span class="delta-up num">▲ +2.4%</span>
+              <span class="delta-note num">较上月 +¥6,712.33 · 已录 4 个账户 · 最近盘点 09-01</span>
+            </div>
+          </div>
+          <div class="hero-r">
+            <div class="hero-cell"><div class="k"><span class="sq" style="background:var(--indigo)"></span>货币资金</div><div class="v num">¥86,420.00</div></div>
+            <div class="hero-cell"><div class="k"><span class="sq" style="background:var(--up)"></span>投资账户</div><div class="v num">¥118,200.00</div></div>
+            <div class="hero-cell"><div class="k"><span class="sq" style="background:var(--income)"></span>基金理财</div><div class="v num">¥71,812.18</div></div>
+            <div class="hero-cell"><div class="k"><span class="sq" style="background:var(--ink-3)"></span>其他</div><div class="v num">¥10,000.00</div></div>
+          </div>
+        </div>
+
+        <div class="grid-2 mt">
+          <!-- 账本账户列表 -->
+          <div class="ledger">
+            <div class="ledger-head">
+              <span class="t">账户</span>
+              <span class="hint">悬停预览 · 点击展开小项目</span>
+              <div class="spacer"></div>
+              <button class="btn btn-ghost btn-sm">+ 新增账户</button>
+            </div>
+            <div class="lrow">
+              <div class="name"><span class="chev">▾</span>支付宝 <span class="badge badge-cash">货币资金</span></div>
+              <div class="amt num">¥86,420.00</div>
+            </div>
+            <div class="lrow sub"><div class="name">余额宝</div><div class="amt num">¥45,200.00</div></div>
+            <div class="lrow sub"><div class="name">零钱</div><div class="amt num">¥41,220.00</div></div>
+            <div class="lrow">
+              <div class="name"><span class="chev">▸</span>同花顺 <span class="badge badge-invest">投资账户</span></div>
+              <div class="amt num">¥118,200.00<span class="cell-delta" style="color:var(--up)">▲ +3.2%</span></div>
+            </div>
+            <div class="lrow">
+              <div class="name"><span class="chev">▸</span>京东金融 <span class="badge badge-fund">基金理财</span></div>
+              <div class="amt num">¥71,812.18</div>
+            </div>
+            <div class="lrow">
+              <div class="name"><span class="chev">▸</span>现金 <span class="badge badge-other">其他</span></div>
+              <div class="amt num">¥10,000.00</div>
+            </div>
+            <div class="lrow total"><div class="name">合计</div><div class="amt num">¥286,432.18</div></div>
+          </div>
+
+          <!-- 右列：趋势 + 月报 -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="chart-card">
+              <div class="head">
+                <span class="t">余额趋势</span>
+                <div class="spacer"></div>
+                <div class="pills"><button class="pill on">全部合计</button><button class="pill">单账户</button></div>
+              </div>
+              <div class="legend"><span class="li"><span class="ln" style="background:var(--indigo)"></span>近 12 个月合计（万元）</span></div>
+              <div class="chart-wrap">
+                <svg class="chart" viewBox="0 0 560 170" preserveAspectRatio="none" aria-label="近12个月余额趋势折线图">
+                  <g stroke="var(--hairline)" stroke-width="1">
+                    <line x1="10" y1="40" x2="549" y2="40"/><line x1="10" y1="80" x2="549" y2="80"/><line x1="10" y1="120" x2="549" y2="120"/>
+                  </g>
+                  <path d="M10,158 L10,147 L59,129 L108,119 L157,124 L206,101 L255,88 L304,95 L353,72 L402,56 L451,67 L500,49 L549,30 L549,158 Z" fill="var(--indigo)" opacity="0.08"/>
+                  <polyline points="10,147 59,129 108,119 157,124 206,101 255,88 304,95 353,72 402,56 451,67 500,49 549,30" fill="none" stroke="var(--indigo)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="549" cy="30" r="3.5" fill="var(--indigo)"/>
+                  <circle cx="549" cy="30" r="7" fill="var(--indigo)" opacity=".2"/>
+                  <g fill="var(--ink-3)" font-size="10">
+                    <text x="10" y="167">10月</text><text x="138" y="167">12月</text><text x="272" y="167">2月</text><text x="400" y="167">4月</text><text x="521" y="167">8月</text>
+                  </g>
+                </svg>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="head"><span class="t">月度余额报表</span><div class="spacer"></div><button class="btn btn-ghost btn-sm">打印</button></div>
+              <table class="matrix">
+                <thead><tr><th>月份</th><th>合计</th><th>环比</th></tr></thead>
+                <tbody>
+                  <tr><td>2026-07</td><td>¥271,890.02</td><td class="chg" style="color:var(--up)">▲ +1.1%</td></tr>
+                  <tr><td>2026-08</td><td>¥279,719.85</td><td class="chg" style="color:var(--up)">▲ +2.9%</td></tr>
+                  <tr><td>2026-09</td><td>¥286,432.18</td><td class="chg" style="color:var(--up)">▲ +2.4%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>关键交互</b>：① 批量录入弹窗保留「全部预填上月」「多笔相加」能力，列表内联编辑金额，Enter 跳到下一行；② 账户行悬停 300ms 出现「记余额 / 历史」浮动操作；③ 环比涨跌一律「红涨绿跌」并带 ▲▼ 符号，色弱用户也可辨识。
+  </div>
+</section>
+
+<!-- ═══════════ 05 界面 B：收支记账 ═══════════ -->
+<section id="screen-records">
+  <div class="sec-head"><span class="sec-no">伍</span><span class="sec-title">界面方案 B · 收支记账</span></div>
+  <hr class="sec-rule">
+  <p class="sec-desc">回答「这个月花在哪了」。三张数字卡（支出/收入/结余）+ 双线趋势 + 分类排行 + 账本式明细流水；「记一笔」常驻右上，核心路径十秒内闭环。</p>
+
+  <div class="frame">
+    <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">127.0.0.1:5173 · #/records</span></div>
+    <div class="app">
+      <aside class="side">
+        <div class="brand">
+          <span class="seal-mark">墨</span>
+          <div><span class="name">墨账</span><span class="en">INK LEDGER</span></div>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 10h18M5 10V7a2 2 0 012-2h10a2 2 0 012 2v3M4 10v9M20 10v9M4 19h16M8 13v3M12 13v3M16 13v3"/></svg>
+          <div>账户余额<span class="desc">资产 · 账户 · 报表</span></div>
+        </div>
+        <div class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+          <div>收支记账<span class="desc">流水 · 分类 · 趋势</span></div>
+        </div>
+        <div class="foot"><div class="status"><span class="led"></span>后端已连接 · SQLite</div></div>
+      </aside>
+
+      <div class="main">
+        <div class="page-head">
+          <div class="page-title">收支记账<span class="date num">2026 年 9 月</span></div>
+          <div class="spacer"></div>
+          <button class="btn btn-secondary btn-sm">导出 CSV</button>
+          <button class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 2v10M2 7h10"/></svg>
+            记一笔
+          </button>
+        </div>
+
+        <!-- 三张数字卡 -->
+        <div class="stat-grid">
+          <div class="stat v-expense">
+            <div class="k">本月支出</div>
+            <div class="v num"><span class="cur">¥</span>6,842.50</div>
+            <div class="foot num">48 笔 · 日均 ¥244</div>
+            <svg class="spark" width="72" height="26" viewBox="0 0 72 26"><polyline points="2,18 14,13 26,16 38,9 50,12 62,7 70,10" fill="none" stroke="var(--expense)" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <div class="stat v-income">
+            <div class="k">本月收入</div>
+            <div class="v num"><span class="cur">¥</span>18,200.00</div>
+            <div class="foot num">3 笔 · 工资 + 兼职</div>
+            <svg class="spark" width="72" height="26" viewBox="0 0 72 26"><polyline points="2,22 14,21 26,6 38,20 50,5 62,4 70,3" fill="none" stroke="var(--income)" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <div class="stat">
+            <div class="k">本月结余</div>
+            <div class="v num"><span class="cur">+</span>11,357.50</div>
+            <div class="foot num">结余率 62.4% · 去年同期 55.1%</div>
+            <svg class="spark" width="72" height="26" viewBox="0 0 72 26"><polyline points="2,20 14,18 26,15 38,14 50,10 62,8 70,5" fill="none" stroke="var(--indigo)" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+
+        <!-- 趋势 + 分类 -->
+        <div class="grid-2 mt">
+          <div class="chart-card">
+            <div class="head">
+              <span class="t">收支趋势</span>
+              <div class="spacer"></div>
+              <div class="pills"><button class="pill on">12 月</button><button class="pill">6 月</button><button class="pill">今年</button></div>
+            </div>
+            <div class="legend">
+              <span class="li"><span class="ln" style="background:var(--income)"></span>收入</span>
+              <span class="li"><span class="ln" style="background:var(--expense)"></span>支出</span>
+              <span class="li"><span class="ln" style="background:var(--indigo)"></span>结余</span>
+            </div>
+            <div class="chart-wrap">
+              <svg class="chart" viewBox="0 0 560 185" preserveAspectRatio="none" aria-label="近12个月收支趋势图">
+                <g stroke="var(--hairline)" stroke-width="1">
+                  <line x1="10" y1="45" x2="549" y2="45"/><line x1="10" y1="95" x2="549" y2="95"/><line x1="10" y1="145" x2="549" y2="145"/>
+                </g>
+                <polyline points="10,35 59,50 108,31 157,28 206,39 255,35 304,29 353,26 402,35 451,31 500,28 549,34" fill="none" stroke="var(--income)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="10,124 59,117 108,119 157,109 206,114 255,118 304,112 353,106 402,116 451,119 500,115 549,119" fill="none" stroke="var(--expense)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                <g fill="var(--ink-3)" font-size="10">
+                  <text x="10" y="182">10月</text><text x="138" y="182">12月</text><text x="272" y="182">2月</text><text x="400" y="182">4月</text><text x="521" y="182">8月</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="head"><span class="t">本月支出分类</span><div class="spacer"></div><span style="font-size:12px;color:var(--ink-3)">饼图 / 柱状 切换</span></div>
+            <div style="padding:14px 20px 18px">
+              <div class="catrow"><span class="cat">居住</span><div class="bar-bg"><div class="bar" style="width:100%"></div></div><span class="val num">¥2,800</span></div>
+              <div class="catrow"><span class="cat">餐饮</span><div class="bar-bg"><div class="bar" style="width:66%"></div></div><span class="val num">¥1,842</span></div>
+              <div class="catrow"><span class="cat">购物</span><div class="bar-bg"><div class="bar" style="width:34%"></div></div><span class="val num">¥962</span></div>
+              <div class="catrow"><span class="cat">交通</span><div class="bar-bg"><div class="bar" style="width:17%"></div></div><span class="val num">¥486</span></div>
+              <div class="catrow"><span class="cat">娱乐</span><div class="bar-bg"><div class="bar" style="width:15%"></div></div><span class="val num">¥415</span></div>
+              <div class="catrow"><span class="cat">其他</span><div class="bar-bg"><div class="bar" style="width:12%"></div></div><span class="val num">¥337</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 明细流水 -->
+        <div class="ledger mt">
+          <div class="ledger-head">
+            <span class="t">明细</span>
+            <span class="hint">48 笔</span>
+            <div class="spacer"></div>
+            <select class="input" style="width:auto;padding:5px 10px;font-size:13px"><option>全部分类</option><option>餐饮</option><option>居住</option></select>
+            <select class="input num" style="width:auto;padding:5px 10px;font-size:13px"><option>2026-09</option><option>2026-08</option></select>
+          </div>
+          <div class="flow-row">
+            <span class="day num">09-05</span>
+            <span><span class="badge badge-expense">餐饮</span></span>
+            <span class="memo">午饭 · 楼下食堂<span class="sub"></span></span>
+            <span class="amt out num">−32.00</span>
+            <span class="acts"><button class="icon-btn" aria-label="编辑"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 3l4 4L8 20H4v-4L17 3z"/></svg></button></span>
+          </div>
+          <div class="flow-row">
+            <span class="day num">09-05</span>
+            <span><span class="badge badge-expense">交通</span></span>
+            <span class="memo">地铁通勤充值</span>
+            <span class="amt out num">−100.00</span>
+            <span class="acts"><button class="icon-btn" aria-label="编辑"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 3l4 4L8 20H4v-4L17 3z"/></svg></button></span>
+          </div>
+          <div class="flow-row">
+            <span class="day num">09-04</span>
+            <span><span class="badge badge-income">工资</span></span>
+            <span class="memo">9 月工资 · XX 公司</span>
+            <span class="amt in num">+18,000.00</span>
+            <span class="acts"><button class="icon-btn" aria-label="编辑"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 3l4 4L8 20H4v-4L17 3z"/></svg></button></span>
+          </div>
+          <div class="flow-row">
+            <span class="day num">09-03</span>
+            <span><span class="badge badge-expense">居住</span></span>
+            <span class="memo">9 月房租</span>
+            <span class="amt out num">−2,800.00</span>
+            <span class="acts"><button class="icon-btn" aria-label="编辑"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 3l4 4L8 20H4v-4L17 3z"/></svg></button></span>
+          </div>
+          <div class="lrow total" style="grid-template-columns:1fr auto">
+            <div class="name">本月合计（支出 −6,842.50 · 收入 +18,200.00）</div>
+            <div class="amt num">结余 +11,357.50</div>
+          </div>
+        </div>
+
+        <!-- 记一笔面板（内联演示） -->
+        <div class="card card-pad mt-lg">
+          <div style="font-size:12px;color:var(--ink-3);margin-bottom:14px">「记一笔」表单 · 弹窗内容（此处内联演示）</div>
+          <div class="entry">
+            <div class="seg" style="height:fit-content"><button class="on expense">支出</button><button class="income">收入</button></div>
+            <div class="amount-input" style="max-width:320px"><span class="cur">¥</span><input value="32.00" aria-label="金额" class="num"></div>
+          </div>
+          <div class="chips" style="margin-top:14px">
+            <span class="chip on">餐饮</span><span class="chip">交通</span><span class="chip">购物</span><span class="chip">居住</span><span class="chip">娱乐</span><span class="chip">医疗</span><span class="chip">其他</span>
+          </div>
+          <div style="display:flex;gap:14px;margin-top:14px;flex-wrap:wrap;align-items:flex-end">
+            <div class="field"><label>日期</label><input class="input num" style="width:150px" value="2026-09-05"></div>
+            <div class="field" style="flex:1;min-width:180px"><label>备注</label><input class="input" placeholder="午饭 · 楼下食堂"></div>
+            <button class="btn btn-primary btn-lg">保存 ⏎</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 06 交互动效 ═══════════ -->
+<section id="motion">
+  <div class="sec-head"><span class="sec-no">陆</span><span class="sec-title">交互与动效</span></div>
+  <hr class="sec-rule">
+  <p class="sec-desc">动效只服务状态变化，绝不动画化布局属性；全部缓动使用 ease-out-quart 家族，尊重系统「减少动态效果」偏好。</p>
+  <table class="spec">
+    <thead><tr><th style="width:190px">场景</th><th>规格</th><th>时长 / 缓动</th></tr></thead>
+    <tbody>
+      <tr><td>按钮 / 行悬停</td><td>背景色过渡 + 主按钮上浮 1px + 阴影加深</td><td>150ms · ease-out</td></tr>
+      <tr><td>输入聚焦</td><td>边框变靛青 + 3px 光环（<code>--focus-ring</code>），光环从不裁切</td><td>150ms · ease-out</td></tr>
+      <tr><td>弹窗（记一笔 / 批量录入）</td><td>遮罩淡入 + 面板 12px 上浮 + 缩放 98%→100%；Esc 关闭、Enter 提交</td><td>300ms · ease-out-quart</td></tr>
+      <tr><td>小项目展开/折叠</td><td>高度过渡 + 子行依次 40ms 阶梯淡入（stagger）</td><td>240ms · ease-out</td></tr>
+      <tr><td>数字卡更新</td><td>金额数字滚动计数（仅英雄总资产与大数字卡）</td><td>500ms · ease-out</td></tr>
+      <tr><td>Toast 反馈</td><td>右侧滑入，2.4s 自动退出，连续操作仅保留最新一条</td><td>240ms · ease-out</td></tr>
+      <tr><td>主题切换</td><td>背景/文字颜色整体过渡（<code>color-mix</code> 兼容降级为瞬时切换）</td><td>300ms · ease-out</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════ 07 无障碍与响应式 ═══════════ -->
+<section id="a11y">
+  <div class="sec-head"><span class="sec-no">柒</span><span class="sec-title">无障碍与响应式</span></div>
+  <hr class="sec-rule">
+  <p class="sec-desc">全部交互目标满足 WCAG 2.1 AA；桌面优先但完整定义降级路径。</p>
+  <table class="spec">
+    <thead><tr><th style="width:210px">项目</th><th>标准与做法</th></tr></thead>
+    <tbody>
+      <tr><td>正文对比度</td><td>墨 #1C2333 / 纸 #F7F5F0 ≈ <b>14:1</b>；暗色米白 #E9E6DD / 深墨 #10141F ≈ <b>12:1</b>，远超 AA（4.5:1）</td></tr>
+      <tr><td>语义色对比度</td><td>青竹 #1F7A57、赭红 #D9472F、靛青 #3E5FA8 在纸底上均 ≥ 4.5:1（小字号加粗使用）</td></tr>
+      <tr><td>涨跌不依赖颜色</td><td>▲▼ 符号 + 百分比文字与颜色同现，色弱可辨</td></tr>
+      <tr><td>键盘</td><td>Tab 顺序 = 视觉顺序；焦点环 2px 靛青偏移 2px 永不隐藏；N 键快捷呼出「记一笔」</td></tr>
+      <tr><td>触控目标</td><td>所有可点击行高 ≥ 44px（含移动端降级）</td></tr>
+      <tr><td>屏幕阅读器</td><td>金额 aria-label 读作「支出 三十二元」；图表提供表格摘要（Recharts 已有 tabular 数据）</td></tr>
+      <tr><td>减少动态</td><td><code>prefers-reduced-motion</code> 时关闭计数动画与阶梯淡入</td></tr>
+      <tr><td>断点</td><td>≥1280px 三栏满血 · 1024–1279 两栏 · 768–1023 单栏+顶部标签 · &lt;768 侧栏收为底部导航，记一笔变为底部常驻按钮（保底可用，不隐藏关键功能）</td></tr>
+      <tr><td>打印</td><td>保留现有 A4 打印样式；新账本行在打印态去阴影、黑色单色、合计保留双下划线</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════ 08 实施映射 ═══════════ -->
+<section id="impl">
+  <div class="sec-head"><span class="sec-no">捌</span><span class="sec-title">实施映射</span></div>
+  <hr class="sec-rule">
+  <p class="sec-desc">设计 token 与现有 <code>src/index.css</code> 的 CSS 变量体系一一对应，改造集中在「换值 + 少量新增」，不动组件 API。</p>
+  <table class="spec">
+    <thead><tr><th style="width:230px">设计 Token</th><th>落点</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>--paper / --paper-2 / --paper-3</code></td><td><code>--background / --card / muted</code></td><td>替换现有 HSL 值为暖纸/深墨体系</td></tr>
+      <tr><td><code>--ink / --ink-2 / --ink-3</code></td><td><code>--foreground / --muted-foreground</code></td><td>墨色阶，暗色反转</td></tr>
+      <tr><td><code>--indigo</code></td><td><code>--primary / --ring</code></td><td>靛青精修：HSL(226 46% 45%)</td></tr>
+      <tr><td><code>--seal</code></td><td>新增变量</td><td>朱砂印章色，用于 Logo、危险操作、涨</td></tr>
+      <tr><td><code>--income / --expense</code></td><td>沿用现有变量名</td><td>数值微调至 AA 对比度</td></tr>
+      <tr><td><code>--up / --down</code></td><td>新增变量</td><td>行情语义「红涨绿跌」，组件内统一用 ▲▼</td></tr>
+      <tr><td>衬线标题 / 等宽数字</td><td><code>index.css</code> 字体栈 + <code>.num { font-variant-numeric: tabular-nums }</code></td><td>零网络字体，系统字体栈</td></tr>
+      <tr><td>账本行 Ledger Row</td><td><code>RecordList / AssetTable</code> 重构为 hairline 行</td><td>替换卡片式列表，密度 +40%</td></tr>
+      <tr><td>合计双下划线</td><td>工具类 <code>.rule-double { border-bottom: 3px double }</code></td><td>总资产卡、报表合计、明细合计三处使用</td></tr>
+      <tr><td>噪点纸纹</td><td>保留现有 body 噪点，透明度降至 0.018</td><td>暗色主题保留径向光斑</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <b>落地顺序建议</b>：① 先换 token 值（半天，全站即刻换装）→ ② 账本行重构 RecordList / AssetTable → ③ 总资产英雄卡 + 环比红涨绿跌 → ④ 记一笔弹窗交互打磨（Enter 链、Toast）。每步独立可验收，随时可回滚。
+  </div>
+</section>
+
+<footer style="margin-top:80px;padding-top:24px;border-top:1px solid var(--hairline-2);display:flex;justify-content:space-between;color:var(--ink-3);font-size:12px;flex-wrap:wrap;gap:8px">
+  <span>墨账 Ink Ledger · finance-app 界面设计方案 v1.0</span>
+  <span class="num">UI Designer · 2026-09-05</span>
+</footer>
+
+</div>
+
+<script>
+const root = document.documentElement;
+const toggle = document.getElementById('themeToggle');
+const label = document.getElementById('themeLabel');
+function setTheme(t) {
+  root.dataset.theme = t;
+  toggle.setAttribute('aria-checked', t === 'dark');
+  label.textContent = t === 'dark' ? '暗色 · 墨夜' : '亮色 · 纸';
+}
+toggle.addEventListener('click', () => setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'));
+toggle.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle.click(); }
+});
+</script>
+</body>
+</html>

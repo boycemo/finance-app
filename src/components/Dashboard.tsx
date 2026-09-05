@@ -1,11 +1,18 @@
-import { Suspense, lazy, useEffect, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react'
 import dayjs from 'dayjs'
 import { AlertTriangle, Download, Loader2, Trash2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { FinanceRecord } from '@/types'
 import { useAppData } from '@/context/DataContext'
+import { useSidebar } from '@/hooks/useSidebar'
+import {
+  NAV_ITEMS,
+  buildRoute,
+  parseRoute,
+  type ViewTab,
+} from '@/config/navigation'
 import AppHeader from './AppHeader'
-import TabBar, { type ViewTab } from './TabBar'
+import Sidebar from './Sidebar'
 import ClearDataDialog from './ClearDataDialog'
 import MonthDetailPrintArea from './MonthDetailPrintArea'
 
@@ -23,10 +30,43 @@ export default function Dashboard() {
     importBackup,
   } = useAppData()
 
-  const [view, setView] = useState<ViewTab>('assets')
+  // hash 路由：#/assets | #/records
+  const [view, setView] = useState<ViewTab>(() => parseRoute(window.location.hash))
+
   const [month, setMonth] = useState<string>(dayjs().format('YYYY-MM'))
   const [editing, setEditing] = useState<FinanceRecord | null>(null)
   const [clearOpen, setClearOpen] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [sidebarCollapsed, toggleSidebar] = useSidebar()
+
+  /** 导航入口：更新 hash（hashchange 监听负责同步状态，支持前进/后退） */
+  const navigate = useCallback((nextView: ViewTab) => {
+    window.location.hash = buildRoute(nextView)
+  }, [])
+
+  // 首次进入若无 hash，补默认路径（不产生历史记录）
+  useEffect(() => {
+    if (!window.location.hash) {
+      window.history.replaceState(null, '', buildRoute(view))
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 监听 hash 变化（含浏览器前进/后退、菜单跳转）
+  useEffect(() => {
+    const handleHashChange = () => setView(parseRoute(window.location.hash))
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
+  // Esc 关闭移动端抽屉
+  useEffect(() => {
+    if (!mobileNavOpen) return
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileNavOpen(false)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [mobileNavOpen])
 
   // 打印完成后清除 data-print-mode（保证下次正常显示）
   useEffect(() => {
@@ -37,19 +77,44 @@ export default function Dashboard() {
     return () => window.removeEventListener('afterprint', handleAfterPrint)
   }, [])
 
+  // 标题行文案：菜单配置驱动
+  const activeItem = NAV_ITEMS.find((item) => item.key === view)
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/40">
-      <AppHeader
-        month={month}
-        onMonthChange={setMonth}
-        showRecordForm={view === 'records'}
-        editing={editing}
-        onCancelEdit={() => setEditing(null)}
-      />
+    <div className="min-h-screen">
+      <div className="flex min-h-screen">
+        <Sidebar
+          view={view}
+          onNavigate={navigate}
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={toggleSidebar}
+          mobileOpen={mobileNavOpen}
+          onCloseMobile={() => setMobileNavOpen(false)}
+        />
 
-      <TabBar view={view} onChange={setView} />
+        <div className="min-w-0 flex-1">
+          <AppHeader
+            month={month}
+            onMonthChange={setMonth}
+            showRecordForm={view === 'records'}
+            editing={editing}
+            onCancelEdit={() => setEditing(null)}
+            onOpenMobileNav={() => setMobileNavOpen(true)}
+          />
 
-      <main id="dashboard-print-area" className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+          <main id="dashboard-print-area" className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        {/* 仅收支记账保留简单标题（账户余额由 AssetsView 自己控制标题与操作） */}
+        {view === 'records' && (
+          <div className="flex items-baseline gap-3">
+            <h2 className="font-serif text-2xl font-semibold tracking-tight text-foreground/90">
+              收支记账
+            </h2>
+            <span className="text-xs text-muted-foreground/70">
+              {dayjs(month).format('YYYY年MM月')} · 流水明细与消费趋势
+            </span>
+          </div>
+        )}
+
         {/* 错误条 */}
         {recordsError && (
           <div className="flex items-start gap-3 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
@@ -95,11 +160,11 @@ export default function Dashboard() {
           )}
         </Suspense>
 
-        <footer className="pb-4 text-center text-xs text-muted-foreground">
+        <footer className="mt-4 rounded-2xl border border-border/40 bg-card/50 p-4 text-center text-xs text-muted-foreground backdrop-blur-sm dark:border-white/8 dark:bg-white/[0.02]">
           <p>
             数据持久化于本地 SQLite（server/finance.db）· 浏览器清理缓存不影响
           </p>
-          <div className="mt-2 flex items-center justify-center gap-2">
+          <div className="mt-3 flex items-center justify-center gap-2">
             <button
               onClick={async () => {
                 try {
@@ -109,18 +174,18 @@ export default function Dashboard() {
                   alert(`导出失败：${String(err)}`)
                 }
               }}
-              className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-card/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-sm transition-all hover:border-primary/40 hover:text-primary active:scale-95"
               title="导出完整备份（JSON，含账户/余额/记录）"
             >
-              <Download className="h-3 w-3" />
+              <Download className="h-3.5 w-3.5" />
               导出备份
             </button>
             <button
               onClick={() => document.getElementById('backup-file-input')?.click()}
-              className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-card/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-sm transition-all hover:border-primary/40 hover:text-primary active:scale-95"
               title="从备份文件还原（覆盖当前数据）"
             >
-              <Upload className="h-3 w-3" />
+              <Upload className="h-3.5 w-3.5" />
               导入还原
             </button>
             <input
@@ -143,10 +208,10 @@ export default function Dashboard() {
             />
             <button
               onClick={() => setClearOpen(true)}
-              className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-card/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-sm transition-all hover:border-destructive/40 hover:text-destructive active:scale-95"
               title="清空全部数据（需输入密码）"
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-3.5 w-3.5" />
               清空全部数据（需密码）
             </button>
           </div>
@@ -157,10 +222,12 @@ export default function Dashboard() {
           onClose={() => setClearOpen(false)}
           onConfirm={clearAll}
         />
-      </main>
+          </main>
 
-      {/* ===== 月度明细打印区（仅打印时显示） ===== */}
-      <MonthDetailPrintArea month={month} />
+          {/* ===== 月度明细打印区（仅打印时显示） ===== */}
+          <MonthDetailPrintArea month={month} />
+        </div>
+      </div>
     </div>
   )
 }

@@ -156,6 +156,8 @@ export default function BalanceReport({ accounts, balances, subAccounts }: Props
     const all = accounts.filter((a) => !a.archived).map((a) => a.id)
     return new Set(all)
   })
+  // 月度环比说明默认折叠
+  const [deltaOpen, setDeltaOpen] = useState(false)
   const activeAccounts = accounts.filter((a) => !a.archived)
 
   const toggleShown = (id: string) => {
@@ -197,17 +199,17 @@ export default function BalanceReport({ accounts, balances, subAccounts }: Props
 
   if (!hasData) {
     return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2">
+      <Card className="border-border/60 bg-card shadow-sm">
+        <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 pb-2">
+          <CardTitle className="flex items-center gap-2 font-serif text-base font-semibold">
             <LineChartIcon className="h-4 w-4" />
             余额趋势与月度报表
           </CardTitle>
-          <CardDescription>录入余额后，趋势图按每次录入时间点展示</CardDescription>
+          <CardDescription className="text-xs">录入余额后，趋势图按每次录入时间点展示</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4">
           <p className="py-10 text-center text-sm text-muted-foreground">
-            还没有余额数据 —— 先去上面给账户「记余额」吧 💡
+            还没有余额数据 —— 先去上面给账户「记余额」吧
           </p>
         </CardContent>
       </Card>
@@ -217,14 +219,14 @@ export default function BalanceReport({ accounts, balances, subAccounts }: Props
   return (
     <div className="space-y-4">
       {/* ===== 趋势图 ===== */}
-      <Card>
-        <CardHeader className="flex-row items-start justify-between space-y-0 pb-2">
+      <Card className="border-border/60 bg-card shadow-sm">
+        <CardHeader className="flex-row items-start justify-between space-y-0 border-b border-border/60 bg-muted/20 px-4 py-3">
           <div>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 font-serif text-base font-semibold">
               <LineChartIcon className="h-4 w-4" />
               余额趋势
             </CardTitle>
-            <CardDescription>每次余额录入都是一个数据点（当日各账户记录值，与月度报表口径一致）</CardDescription>
+            <CardDescription className="text-xs">每次余额录入都是一个数据点</CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <Popover>
@@ -339,14 +341,11 @@ export default function BalanceReport({ accounts, balances, subAccounts }: Props
       </Card>
 
       {/* ===== 月度报表 ===== */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle>月度余额报表</CardTitle>
-          <CardDescription>
-            全部历史月份（{months.length} 个月）· 各账户当月留存金额（无记录的月份为 0），可滚动查看
-          </CardDescription>
+      <Card className="border-border/60 bg-card shadow-sm">
+        <CardHeader className="flex-row items-center justify-between space-y-0 border-b border-border/60 bg-muted/20 px-4 py-3">
+          <CardTitle className="font-serif text-base font-semibold">月度余额报表</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3">
           <div data-table-container className="max-h-[420px] overflow-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0 z-10 bg-card shadow-sm">
@@ -424,34 +423,48 @@ export default function BalanceReport({ accounts, balances, subAccounts }: Props
             </table>
           </div>
 
-          {/* 环比说明（放表格下方） */}
-          <div className="mt-3 space-y-1">
-            {displayedRows.map((r) => {
-              const prev = prevTotalMap.get(r.month) ?? null
-              if (prev === null) return null
-              const diff = r.total - prev
-              return (
-                <p key={r.month} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span className="w-16 shrink-0 font-medium">{monthShortLabel(r.month)}</span>
-                  {diff === 0 ? (
-                    <span className="font-semibold tabular-nums text-muted-foreground">持平</span>
-                  ) : (
-                  <span
-                    className={cn(
-                      'flex items-center gap-0.5 font-semibold tabular-nums',
-                      diff > 0 && 'text-emerald-600',
-                      diff < 0 && 'text-rose-600',
-                    )}
-                  >
-                    {diff > 0 ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                    {diff > 0 ? '+' : ''}
-                    {formatMoney(diff)}
-                  </span>
-                  )}
-                  <span className="text-muted-foreground/70">较上月</span>
-                </p>
-              )
-            })}
+          {/* 环比说明（放表格下方，默认折叠） */}
+          <div className="mt-3 border-t border-border/40 pt-2">
+            <button
+              type="button"
+              onClick={() => setDeltaOpen((v) => !v)}
+              aria-expanded={deltaOpen}
+              aria-controls="monthly-delta-body"
+              className="flex w-full items-center justify-between rounded-md px-1 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+            >
+              <span className="font-medium">月度环比说明</span>
+              {deltaOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </button>
+            {deltaOpen && (
+              <div id="monthly-delta-body" className="mt-1 space-y-1">
+                {displayedRows.map((r) => {
+                  const prev = prevTotalMap.get(r.month) ?? null
+                  if (prev === null) return null
+                  const diff = r.total - prev
+                  return (
+                    <p key={r.month} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className="w-16 shrink-0 font-medium">{monthShortLabel(r.month)}</span>
+                      {diff === 0 ? (
+                        <span className="font-semibold tabular-nums text-muted-foreground">持平</span>
+                      ) : (
+                      <span
+                        className={cn(
+                          'flex items-center gap-0.5 font-semibold tabular-nums',
+                          diff > 0 && 'text-emerald-600',
+                          diff < 0 && 'text-rose-600',
+                        )}
+                      >
+                        {diff > 0 ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                        {diff > 0 ? '+' : ''}
+                        {formatMoney(diff)}
+                      </span>
+                      )}
+                      <span className="text-muted-foreground/70">较上月</span>
+                    </p>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
