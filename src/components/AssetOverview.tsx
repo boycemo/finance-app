@@ -22,15 +22,15 @@ export const KIND_LABELS: Record<AccountKind, string> = {
 
 const KIND_ORDER: AccountKind[] = ['cash', 'investment', 'fund', 'credit', 'receivable', 'payable', 'other']
 
-/** 分类色点（低饱和墨色调） */
+/** 分类色点（高对比度，色相间隔 60°） */
 const KIND_COLORS: Record<AccountKind, string> = {
-  cash: '#2563eb',
-  investment: '#059669',
-  fund: '#d97706',
-  credit: '#7c3aed',
-  receivable: '#0891b2',
-  payable: '#dc2626',
-  other: '#64748b',
+  cash: '#2563eb',        // blue-600  深蓝
+  investment: '#16a34a',  // green-600 翠绿
+  fund: '#ea580c',        // orange-600 橙
+  credit: '#9333ea',      // purple-600 紫
+  receivable: '#db2777',  // pink-600 玫红
+  payable: '#0ea5e9',     // sky-500  青
+  other: '#475569',       // slate-600 深灰
 }
 
 export default function AssetOverview({ accounts, balances, subAccounts, month }: Props) {
@@ -77,6 +77,47 @@ export default function AssetOverview({ accounts, balances, subAccounts, month }
             <span>· 已录 {covered}/{activeAccounts.length} 个账户</span>
             {latestDate && <span>· 最近盘点 {latestDate}</span>}
           </div>
+
+          {/* 资产配置比例条 */}
+          {(() => {
+            const positive = kinds.filter((k) => k.value > 0)
+            const totalPositive = positive.reduce((s, k) => s + k.value, 0)
+            if (totalPositive <= 0) return null
+            return (
+              <div className="mt-6">
+                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/80">
+                  资产配置（正值占比）
+                </p>
+                <div className="mt-2 flex h-2 w-full overflow-hidden rounded-full bg-muted">
+                  {positive.map((k) => {
+                    const pct = (k.value / totalPositive) * 100
+                    return (
+                      <div
+                        key={k.kind}
+                        className="h-full transition-all"
+                        style={{ width: `${pct}%`, background: KIND_COLORS[k.kind] }}
+                        title={`${KIND_LABELS[k.kind]} ¥${formatMoney(k.value)} · ${pct.toFixed(1)}%`}
+                      />
+                    )
+                  })}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                  {positive.map((k) => {
+                    const pct = (k.value / totalPositive) * 100
+                    return (
+                      <span key={k.kind} className="flex items-center gap-1.5">
+                        <span
+                          className="inline-block h-1.5 w-1.5 rounded-full"
+                          style={{ background: KIND_COLORS[k.kind] }}
+                        />
+                        {KIND_LABELS[k.kind]} <span className="font-medium text-foreground/80">{pct.toFixed(1)}%</span>
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
         </div>
 
         {/* 右侧：分类四宫格 */}

@@ -135,7 +135,7 @@ export default function AssetTable({
       .sort((a, b) => (a.date < b.date ? 1 : -1))
 
   return (
-    <Card className="overflow-hidden border-border/60 bg-card shadow-sm">
+    <Card className="flex h-full max-h-[900px] flex-col overflow-hidden border-border/60 bg-card shadow-sm">
       <CardHeader className="flex-row items-center justify-between space-y-0 border-b border-border/60 bg-muted/20 px-4 py-3">
         <div>
           <CardTitle className="font-serif text-base font-semibold">账户</CardTitle>
@@ -148,7 +148,7 @@ export default function AssetTable({
           新增账户
         </Button>
       </CardHeader>
-      <CardContent className="space-y-2 p-3">
+      <CardContent className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
         {active.length === 0 && (
           <p className="py-8 text-center text-sm text-muted-foreground">
             还没有账户，点右上角「新增账户」添加（比如：支付宝、京东金融、同花顺…）

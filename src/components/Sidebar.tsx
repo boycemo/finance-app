@@ -62,7 +62,7 @@ export default function Sidebar({
           )}
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <span className="font-serif text-lg font-bold">墨</span>
+            <span className="font-serif text-lg font-bold">Hi</span>
           </div>
           {!collapsed && (
             <div className="mt-2 text-center">
