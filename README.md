@@ -1,6 +1,16 @@
 # 个人记账 · Personal Finance
 
+![license](https://img.shields.io/github/license/boycemo/finance-app)
+![react](https://img.shields.io/badge/React-18-61dafb)
+![typescript](https://img.shields.io/badge/TypeScript-72.9%25-blue)
+![node](https://img.shields.io/badge/Node-Express-339933)
+![sqlite](https://img.shields.io/badge/DB-SQLite-003B57)
+![offline](https://img.shields.io/badge/data-local%20only-brightgreen)
+![size](https://img.shields.io/github/size/boycemo/finance-app/index.html)
+
 本地化、轻量级的个人收支管理 Web 应用。前端 React + Tailwind + shadcn/ui + Recharts，后端 Node + Express + SQLite。**数据持久化在本地 SQLite 文件，浏览器清缓存不影响**。
+
+> 📸 界面截图暂未提供(避免示例数据与真实账户信息混淆)。可参考 [技术栈](#-技术栈) + [功能](#-功能) 章节了解 UI 能力;或本地 `start.bat` 启动后查看。
 
 ## ⚡ 快速开始（推荐）
 
